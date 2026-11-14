@@ -12,8 +12,8 @@ herdr-app do layout.switch '{"name":"phosphor"}'
 
 `install.sh` runs `./check.sh` first and refuses to install if it fails. It copies `layouts/phosphor.*`,
 `themes/phosphor.json`, `backgrounds/phosphor-*` and `mods/ph-*` into `~/.config/herdr-app` (`HERDR_APP_HOME`
-overrides) and touches nothing else. It adds `"ctrl-shift-u": "ph-kit.respond"` to section `layout:phosphor` in
-`keys.json` only if that key is free there. Re-running it updates in place and keeps your calm/full choice.
+overrides) and touches nothing else. In `keys.json` section `layout:phosphor` it adds `"ctrl-shift-u": "ph-kit.respond"`
+and `"ctrl-shift-i": "ph-kit.toggle"`, each only if that key is free. Re-running it updates in place and keeps your calm/full choice.
 
 ## Switch
 
@@ -32,11 +32,16 @@ and toasts read the key from there.
 ```sh
 ./intensity.sh calm   # no scanlines, no blinking or loops, glow down to its core, solid hazard plates, no boot overlay
 ./intensity.sh full   # back to everything
+./intensity.sh toggle # the other one (same as ctrl-shift-i while PHOSPHOR shows)
 ./intensity.sh        # print the current one
 ```
 
-It edits the installed layout (props.intensity on every ph-* block, plus the scanline background, `terminal_opacity`
-and the main pane frame); Herdr reloads it live. The repo's layout stays `full`.
+The value lives only in Herdr's shared state (`shared("ph.intensity")`), set by the `ph-kit` mod: `ctrl-shift-i`,
+`herdr-app do ph-kit.calm` / `ph-kit.full` / `ph-kit.toggle`, or this script (which calls those). Every mod redraws
+in place; none starts over, so the EVENTS log, the histogram, time-in-state clocks and CPU readings keep their history.
+ph-kit also swaps the scanline look in the layout (background image, `terminal_opacity`, the main pane frame) with
+`layout.set`; it never changes mod props. With the window closed the script edits the installed layout and
+`shared.json` itself. The command palette (`ctrl-shift-p`) lists only Herdr's own commands, so use the key.
 
 ## Uninstall
 

@@ -27,7 +27,7 @@ print("calm" if v == "calm" else "full")' "$SHARED"
 look() { # the layout file's look: "calm" | "full"
   python3 -I -c 'import json, sys
 t = json.load(open(sys.argv[1]))
-print("calm" if t.get("background") == "canvas" and t.get("terminal_opacity") == 1 else "full")' "$LAYOUT" 2>/dev/null || true
+print("calm" if t.get("background") == "canvas" else "full")' "$LAYOUT" 2>/dev/null || true
 }
 
 want="${1:-}"
@@ -61,7 +61,10 @@ with open(path) as f:
 before = json.dumps(tree, sort_keys=True)
 calm = want == "calm"
 tree["background"] = "canvas" if calm else {"image": "backgrounds/phosphor-scanlines.png", "fit": "cover"}
-tree["terminal_opacity"] = 1 if calm else 0.7
+op = 1 if calm else 0.7
+cur = tree.get("terminal_opacity")
+if not (isinstance(cur, (int, float)) and abs(cur - op) < 1e-3):  # Herdr saves f32: 0.699999988… is 0.7
+    tree["terminal_opacity"] = op
 def walk(n):
     if isinstance(n, dict):
         if n.get("id") == "main" and isinstance(n.get("content"), dict) and isinstance(n["content"].get("pane"), dict):

@@ -50,3 +50,9 @@ test("intensity.sh (window closed path) makes the same edit as lib/look.js", () 
     assert.deepEqual(JSON.parse(readFileSync(f)), repo);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("f32 opacity from Herdr counts as the same look", () => {
+  const saved = { ...repo, terminal_opacity: 0.699999988079071 };
+  assert.equal(applyLook(saved, "full"), null);
+  assert.equal(lookOf(saved), "full");
+});

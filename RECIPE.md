@@ -75,9 +75,10 @@ Kosugi Maru subset (kanji), JetBrains Mono (terminals, tags, arrows, key caps).
   DAEMONS row focuses the agent (a pane-less sub-agent is peeked), right-click pins/unpins; tabs: click selects, drag
   moves, double-click renames, right-click menu, middle-click / `×` closes, wheel cycles; pane header buttons split,
   zoom, close; `cmd` key cap opens the palette; FILES / CHANGES toggle the panel.
-- **Calm (`./intensity.sh calm`):** no scanlines (root background `canvas`, `terminal_opacity` 1, pane frame back to
+- **Calm (`ctrl-shift-i` toggles, or `./intensity.sh calm`):** no scanlines (root background `canvas`, `terminal_opacity` 1, pane frame back to
   `background`), glow reduced to its 1 px core, hazard stripes become solid red plates, cursor solid, bars static, no
-  blinking, toasts just appear, no boot overlay, the status line reads `MOTION CALM`. Same information.
+  blinking, toasts just appear, no boot overlay, the status line reads `MOTION CALM`. Same information, and the same
+  history: switching restarts nothing, so EVENTS, the histogram, time-in-state clocks and CPU readings carry on.
 - No sound anywhere.
 
 ## Built from
@@ -88,14 +89,18 @@ Kosugi Maru subset (kanji), JetBrains Mono (terminals, tags, arrows, key caps).
   (weight, ph-side), `telemetry` (440 px, ph-telemetry)], `work` column [`tabs` (26 px, ph-tabs), `work-body` row
   [`main` `{"tab":"active"}` with a pane frame (`background: "#12110e00"`, header ph-pane 26 px top always), `panel`
   (hidden) stack `files` / `changes`]]] · `statusline` row (22 px) [`status` (ph-status), `kit` (0 px, ph-kit)].
-  Every ph-* node has `props.intensity` (`full` | `calm`); `intensity.sh` rewrites those and the three scanline keys.
+  No ph-* node has an intensity prop: it lives only in `shared("ph.intensity")` (`full` | `calm`), because a props
+  change starts a block over as a new copy (empty localStorage, restarted timers). Only the three scanline keys
+  change in the layout, and they are not mod props.
 - `themes/phosphor.json`: background `#12110e`, foreground `#e6d3a8`, gruvbox ANSI, cursor amber; accent `#fabd2f`,
   canvas / chrome `#0b0a07`, border `#3c3836`.
 - `lib/` (copied into every mod by `tools/sync-lib.sh`): `palette.js` (colours, fonts, state tags/kanji, urgency
   order), `geom.js` + `plate.js` (cut-corner plates, outlines, hazard stripes via `Background.pattern_slash`,
-  stacked-stroke glow via `paint_path`), `motion.js` (intensity from props, else `shared("ph.intensity")`; `blink`,
-  `cursor`, `bars` that drop their loops in calm), `since.js` (time-in-state tracker).
-- Mods: `ph-kit` (invisible; fonts, mirrors props.intensity to `shared("ph.intensity")`, the `respond` command via
+  stacked-stroke glow via `paint_path`), `motion.js` (intensity from `shared("ph.intensity")`, read in every render; `blink`,
+  `cursor`, `bars` that drop their loops in calm), `since.js` (time-in-state tracker), `look.js` (the scanline keys for
+  each intensity).
+- Mods: `ph-kit` (invisible; fonts; the only writer of `shared("ph.intensity")`: commands `ph-kit.calm`, `ph-kit.full`,
+  `ph-kit.toggle` set it and apply the scanline look with `layout.set`; the `respond` command via
   `nextCommand()` → `agent.focus`), `ph-title`, `ph-tabs`, `ph-side`, `ph-telemetry`, `ph-pane`, `ph-status`,
   `ph-toast`, `ph-boot`. Shipped mods used: `files`, `changes`, `menu` (space/tab menus).
 - herdr: `agents`, `terminals`, `panes`, `spaces`, `focused`, `machines`, `keys`, `layout`, `settings`, `updates`,
@@ -132,6 +137,6 @@ Kosugi Maru subset (kanji), JetBrains Mono (terminals, tags, arrows, key caps).
 - `herdr-app do layout.switch '{"name":"phosphor"}'` loads it and `herdr-app status` shows `errors: []`, with no
   `*.error` files under `mods/`.
 - A blocked agent shows the red title strip, sorts first in DAEMONS, and `ctrl-shift-u` focuses it.
-- `./intensity.sh calm` removes scanlines, blinking and loops (status line says `MOTION CALM`); `./intensity.sh full`
-  brings them back.
+- `./intensity.sh calm` (or `ctrl-shift-i`) removes scanlines, blinking and loops (status line says `MOTION CALM`);
+  `./intensity.sh full` brings them back. EVENTS, the histogram and the DAEMONS clocks keep their history across it.
 - With every agent idle, nothing on screen moves and the only redraws are once a minute.

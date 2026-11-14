@@ -14,7 +14,9 @@ export function applyLook(tree, want) {
   const t = JSON.parse(JSON.stringify(tree));
   const before = JSON.stringify(t);
   t.background = calm ? "canvas" : { ...SCANLINES };
-  t.terminal_opacity = calm ? 1 : 0.7;
+  // Herdr stores opacity as f32 (0.7 comes back 0.699999988…): close enough counts as the same look.
+  const op = calm ? 1 : 0.7;
+  if (!(typeof t.terminal_opacity === "number" && Math.abs(t.terminal_opacity - op) < 1e-3)) t.terminal_opacity = op;
   const walk = (n) => {
     if (Array.isArray(n)) { n.forEach(walk); return; }
     if (!n || typeof n !== "object") return;
