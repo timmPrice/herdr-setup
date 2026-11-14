@@ -105,9 +105,19 @@ try:
 except FileNotFoundError:
     data = {}
 data["ph.intensity"] = want
+try:
+    mode = os.stat(path).st_mode & 0o777   # keep Herdr's own mode (mkstemp makes 0600)
+except FileNotFoundError:
+    mode = 0o644
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".shared.", suffix=".tmp")
-with os.fdopen(fd, "w") as f:
-    json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
-os.replace(tmp, path)
+try:
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f, separators=(",", ":"), ensure_ascii=False)
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+except BaseException:
+    try: os.unlink(tmp)
+    except FileNotFoundError: pass
+    raise
 PY
 echo "phosphor intensity: $want"

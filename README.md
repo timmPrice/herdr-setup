@@ -13,7 +13,9 @@ herdr-app do layout.switch '{"name":"phosphor"}'
 `install.sh` runs `./check.sh` first and refuses to install if it fails. It copies `layouts/phosphor.*`,
 `themes/phosphor.json`, `backgrounds/phosphor-*` and `mods/ph-*` into `~/.config/herdr-app` (`HERDR_APP_HOME`
 overrides) and touches nothing else. In `keys.json` section `layout:phosphor` it adds `"ctrl-shift-u": "ph-kit.respond"`
-and `"ctrl-shift-i": "ph-kit.toggle"`, each only if that key is free. Re-running it updates in place and keeps your calm/full choice.
+and `"ctrl-shift-i": "ph-kit.toggle"`, each only if that key is free. Re-running it updates in place and keeps your calm/full choice;
+it does replace edits made to the phosphor layout itself (a dragged sidebar width, for example).
+Needs `herdr-app` on `PATH`, `python3`, `rsync` and `node` (check.sh runs the node tests).
 
 ## Switch
 
@@ -46,14 +48,24 @@ ph-kit also swaps the scanline look in the layout (background image, `terminal_o
 ## Uninstall
 
 ```sh
-herdr-app do layout.switch '{"name":"<another layout>"}'
+herdr-app do layout.switch '{"name":"main"}'    # or any other layout you use
+tools/fake.sh --clean                            # only if you installed dev fakes (phosphor-fake, mods/ph-*-fake)
 H=~/.config/herdr-app
 rm -f  $H/layouts/phosphor.json $H/layouts/phosphor.svg $H/themes/phosphor.json $H/backgrounds/phosphor-scanlines.png
 rm -rf $H/mods/ph-kit $H/mods/ph-title $H/mods/ph-tabs $H/mods/ph-side $H/mods/ph-telemetry \
        $H/mods/ph-pane $H/mods/ph-status $H/mods/ph-toast $H/mods/ph-boot
+rm -rf $H/data/ph-*                              # the mods' stored data (history, clocks); only PHOSPHOR uses ph-
 ```
 
-Then remove the `"layout:phosphor"` section (it only holds `ctrl-shift-u`) from `~/.config/herdr-app/keys.json`.
+Then, in `~/.config/herdr-app/keys.json` section `"layout:phosphor"`, remove `ctrl-shift-u` and `ctrl-shift-i`, and
+the section itself if it is then empty.
+
+Two keys stay in `shared.json`: `ph.intensity` and `ph.boot.ran`. They are harmless. To remove them, close the
+window first (Herdr rewrites the file while it runs), then:
+
+```sh
+python3 -I -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); [d.pop(k,None) for k in ("ph.intensity","ph.boot.ran")]; json.dump(d,open(p,"w"))' ~/.config/herdr-app/shared.json
+```
 
 ## Develop
 
@@ -62,8 +74,9 @@ Then remove the `"layout:phosphor"` section (it only holds `ctrl-shift-u`) from 
 - `node --import ./tests/stubs/register.mjs --test tests/*.test.mjs` runs only the node tests.
 - `lib/` holds the shared helpers. Edit them there and run `tools/sync-lib.sh`, which copies them into each mod
   (mods can't import across folders).
-- `tools/fake.sh <mod> tools/scenarios/demo.json [--install]` renders a mod with fake agents and spaces.
-  `tools/fake.sh --clean` removes the installed fakes.
+- `tools/fake.sh <mod> tools/scenarios/demo.json [--install] [--keep]` renders a mod with fake agents and spaces
+  (the temp copy is removed on exit unless `--keep`). `tools/fake.sh --clean` removes the installed fakes and their
+  `data/ph-*-fake`; switch back to phosphor first if phosphor-fake is shown.
 - `python3 -I tools/make-boot-art.py` regenerates the scanline background and the boot wordmark glow.
 - Project rules: no sound; idle is still; minute-resolution clocks only, no per-second redraws; motion only on
   RUN/WAIT, and none in calm; amber means "you are here" and nothing else.
