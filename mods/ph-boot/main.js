@@ -47,7 +47,8 @@ export default class PhBoot extends View {
     this.closed = false;
     this.started = Date.now();
     this.bootId = (this.started & 0xffff).toString(16).toUpperCase().padStart(4, "0");
-    this.skip = isCalm() || alreadyRan();
+    // props.replay (an explicit re-open, e.g. a test or a future "replay boot" command) bypasses the once-per-run guard, never calm.
+    this.skip = isCalm() || (!props()?.replay && alreadyRan());
     if (this.skip) { cx.timer.after(0, () => this.close(false)); return; }
     markRan();
     this.returnPane = focused()?.pane ?? null;
@@ -130,7 +131,7 @@ export default class PhBoot extends View {
     const W = Math.max(560, Math.min(1120, winW - 48));
     const pad = 36;
     const nLines = Math.max(this.total ?? 6, this.lines.length);
-    const H = 96 + 18 + nLines * LINE_H + 14 + 40 + 46;
+    const H = 96 + 18 + nLines * LINE_H + 14 + 40 + 46 + 12;
     const shown = this.lines.length;
     const filled = cellsFor(shown, nLines, CELLS);
     const pct = Math.round((100 * shown) / nLines);
@@ -177,7 +178,7 @@ export default class PhBoot extends View {
       .child(div().flex_1())
       .child(div().font_family(FONT_NUM).text_size(30).text_color(P.amber).child(`${pct}%`));
 
-    const footer = h_flex().h(46).items_end().font_family(FONT_UI).text_size(14).text_color(P.dim)
+    const footer = h_flex().h(46).items_center().font_family(FONT_UI).text_size(14).text_color(P.dim)
       .child(div().child("once per run · 1.3 s · any key / click / esc skips"))
       .child(div().flex_1())
       .child(div().child("MOTION ON"));

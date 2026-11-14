@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { bootLines, layoutMods, daemonsByProgram, parseTelemetry, stepFor, cellsFor } from "../mods/ph-boot/bootlines.js";
+import { clip, bootLines, layoutMods, daemonsByProgram, parseTelemetry, stepFor, cellsFor } from "../mods/ph-boot/bootlines.js";
 
 const demo = JSON.parse(readFileSync(new URL("../tools/scenarios/demo.json", import.meta.url)));
 const text = (l) => l.parts.map((p) => p.text).join("");
@@ -63,7 +63,7 @@ test("many blocked agents: oldest first, capped, rest summarised", () => {
   const lines = bootLines({ agents, spaces: [], terminals: [] });
   const waits = lines.filter((l) => l.tag === "[WAIT]").map(text);
   assert.equal(waits.length, 4);
-  assert.match(waits[0], /^claude@t6 needs input · s › 03:a-very-long/);
+  assert.equal(waits[0], "claude@t6 needs input · s › 03:a-very-long-tab-name-th…");
   assert.equal(waits[3], "4 more daemons need you");
 });
 
@@ -77,4 +77,10 @@ test("pace fits ~1.1 s and the bar fills", () => {
   assert.equal(cellsFor(3, 6), 20);
   assert.equal(cellsFor(6, 6), 40);
   assert.equal(cellsFor(9, 6), 40);
+});
+
+test("clip shortens with an ellipsis", () => {
+  assert.equal(clip("abcdef", 6), "abcdef");
+  assert.equal(clip("abcdefg", 6), "abcde…");
+  assert.equal(clip(null, 3), "");
 });

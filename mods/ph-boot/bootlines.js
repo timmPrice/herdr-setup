@@ -16,6 +16,12 @@ const dim = (text) => ({ text, color: P.dim2 });
 const txt = (text) => ({ text });
 const SEP = dim(" · ");
 
+/** Shorten to n chars with an ellipsis (the overlay row has a fixed width; flex text can't ellipsize mid-row). */
+export function clip(s, n) {
+  s = String(s ?? "");
+  return s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…" : s;
+}
+
 /** Every distinct `mod` named in a layout tree (blocks, pane headers, floats, toast...). */
 export function layoutMods(tree) {
   const out = new Set();
@@ -102,9 +108,11 @@ export function bootLines(snap, { maxWait = 3 } = {}) {
   const blocked = agents.filter((a) => a?.status === "blocked").sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
   for (const a of blocked.slice(0, maxWait)) {
     const prog = a.program?.name || a.app || "agent";
-    const where = [a.space_name, a.tab_index != null ? `${String(a.tab_index).padStart(2, "0")}${a.tab_name ? ":" + a.tab_name : ""}` : a.tab_name]
+    const tab = a.tab_name ? clip(a.tab_name, 24) : null;
+    const where = [a.space_name ? clip(a.space_name, 28) : null,
+      a.tab_index != null ? `${String(a.tab_index).padStart(2, "0")}${tab ? ":" + tab : ""}` : tab]
       .filter(Boolean).join(" › ");
-    lines.push({ ...WAIT, parts: [{ text: `${prog}@${a.address}`, color: P.fg }, dim(" needs input"), ...(where ? [SEP, dim(where)] : [])] });
+    lines.push({ ...WAIT, parts: [{ text: clip(`${prog}@${a.address}`, 24), color: P.fg }, dim(" needs input"), ...(where ? [SEP, dim(where)] : [])] });
   }
   if (blocked.length > maxWait) {
     const more = blocked.length - maxWait;
