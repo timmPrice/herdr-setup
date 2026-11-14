@@ -13,8 +13,8 @@ export const P = {
   grey: "#928374",
 };
 
-// Family name inside mods/nk-pane/fonts/DotGothic16-nk.ttf (registered app-wide).
-export const JP = "DotGothic16";
+// Family name inside mods/nk-pane/fonts/KosugiMaru-nk.ttf (registered app-wide).
+export const JP = "Kosugi Maru";
 
 export const KANJI = {
   working: "稼働",

@@ -1,0 +1,5 @@
+The kanji in seal-*.svg are glyph outlines from Kosugi Maru (KosugiMaru-Regular.ttf from
+https://github.com/google/fonts/tree/main/apache/kosugimaru), converted to SVG paths by
+tools/make_seals.py (scaled and stroked slightly).
+Copyright 2010 The Kosugi Maru Project Authors (https://github.com/googlefonts/kosugi-maru).
+Licensed under the Apache License, Version 2.0 (LICENSE.txt in this folder).

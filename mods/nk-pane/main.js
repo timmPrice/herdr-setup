@@ -1,9 +1,9 @@
 // nk-pane: the neo-kyoto pane header, a kanji neon status sign.
-// Layout: "header": { "content": { "mod": "nk-pane", "props": { "intensity": "full" } }, "height": 30 }
+// Layout: "header": { "content": { "mod": "nk-pane", "props": { "intensity": "full" } }, "height": 32 }
 // Props from the app: { pane, terminal } plus the layout's { intensity: "full" | "calm" }.
 //
 // Left: a neon sign chip with the agent's status kanji (稼働 working, 待機 idle, 警告 blocked,
-// 完了 done) in DotGothic16; a plain shell gets just a small dot. Then the name, folder and
+// 完了 done) in Kosugi Maru; a plain shell gets just a small dot. Then the name, folder and
 // git branch, and on hover the split/zoom/close buttons of the shipped `pane` mod.
 // Motion (all native, nothing on idle/done):
 //   working: slow opacity pulse on the sign (both intensities)
@@ -19,6 +19,10 @@ import { P, JP, kanji, statusColor } from "./palette.js";
 const ICONS = "mods/nk-pane";
 const OFF = "　"; // full-width space: keeps the other character in place
 const FLICKER_MS = 60;
+// Sign size: 16px Kosugi Maru (16 device px at zoom 1, 19.2 at 1.2) in a 22px chip; with the
+// focus ring (1px pad + 1px border each side) it is 26px tall, centred in the 32px header.
+const SIGN_TEXT = 16;
+const SIGN_H = 22;
 
 // Match the first visible tab frame, including the active child of a stack (from mods/pane).
 function paneFrame(node) {
@@ -119,15 +123,15 @@ export default class NkPane extends View {
     let chip = h_flex()
       .id(`${id}-${st}-${focused ? "f" : "u"}`) // re-keyed so the pulse restarts at the new range
       .flex_none()
-      .h(20)
-      .px(6)
+      .h(SIGN_H)
+      .px(7)
       .items_center()
       .rounded(3)
       .border_1()
       .bg(color + (focused ? "33" : "1a"))
       .border_color(color + (focused ? "aa" : "55"))
       .font_family(JP)
-      .text_size(40 / 3) // 16 device px at zoom 1.2: DotGothic16's native grid, so the dots stay crisp
+      .text_size(SIGN_TEXT)
       .child(label);
 
     // Focused: brighter, plus a faint outer ring (stacked translucent border = neon halo).

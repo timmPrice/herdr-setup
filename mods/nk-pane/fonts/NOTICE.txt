@@ -1,0 +1,8 @@
+KosugiMaru-nk.ttf is a modified version of Kosugi Maru (KosugiMaru-Regular.ttf from
+https://github.com/google/fonts/tree/main/apache/kosugimaru).
+Copyright 2010 The Kosugi Maru Project Authors (https://github.com/googlefonts/kosugi-maru).
+Licensed under the Apache License, Version 2.0 (LICENSE.txt in this folder).
+
+Change made: subset with fontTools pyftsubset to the glyphs the neo-kyoto mods use
+(稼働待機警告完了不明桜判通知, katakana U+30A0-30FF, printable ASCII, …, U+3000).
+Outlines and family name ("Kosugi Maru") are unchanged.
