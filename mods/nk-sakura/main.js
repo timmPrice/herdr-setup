@@ -2,7 +2,8 @@
 //
 // - Trunk/branches: one static SVG (tree-v1.svg, 280x220), drawn with image(). Static = free.
 // - Blossoms: one tinted svg() per anchor. Limbs are spaces (agents grouped by space, one limb per
-//   space in order), one blossom per agent in stable order; spare anchors are dim decorative buds.
+//   space, remembered), one blossom per agent on a remembered anchor (see assign.js), so blossoms
+//   never jump when others come and go; spare anchors are dim decorative buds.
 // - Status: working = aqua, slow opacity pulse; idle = dim pink, still; blocked = orange + hanging
 //   lantern (+ faster pulse in full); done = full pink bloom, still.
 // - Full intensity: up to 6 drifting petals, one per working agent (none when nothing works).
@@ -15,7 +16,8 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import { props, agents, run, fonts, placement } from "herdr";
-import { P, statusColor, kanji, JP_FONT } from "./palette.js";
+import { P, statusColor, kanji, FONT_JP } from "./palette.js";
+import { ANCHORS, assign, newState } from "./assign.js";
 
 const DIR = "mods/nk-sakura";
 const W = 280;
@@ -23,16 +25,6 @@ const H = 220;
 const MAX_PETALS = 6;
 const LIST_ROWS = 4;
 
-// Hand-picked anchors in tree-v1.svg's units: [x, y, limb]. Limbs (in the order spaces get them):
-// 0 centre, 1 left-upper, 2 right-upper, 3 left-low, 4 right-low.
-const ANCHORS = [
-  [152, 14, 0], [160, 26, 0], [140, 38, 0], [154, 40, 0], [194, 34, 0], [188, 48, 0],
-  [38, 44, 1], [56, 50, 1], [58, 80, 1], [72, 74, 1], [108, 46, 1], [112, 58, 1], [98, 66, 1],
-  [256, 26, 2], [248, 38, 2], [230, 20, 2], [236, 34, 2], [262, 76, 2], [248, 78, 2],
-  [34, 102, 3], [50, 106, 3], [80, 94, 3], [86, 106, 3], [100, 142, 3], [112, 140, 3], [66, 116, 3],
-  [276, 112, 4], [266, 122, 4], [266, 150, 4], [256, 148, 4],
-];
-const LIMBS = 5;
 
 const BUD = "#9a737e"; // dim grey-pink
 const URGENCY = { blocked: 0, done: 1, working: 2, idle: 3 };
@@ -52,45 +44,21 @@ const nameOf = (a) => {
   return n.length > 18 ? n.slice(0, 17) + "…" : n;
 };
 
-// Agents → anchor indices. Spaces in order of first appearance (agents() is in space/tab/pane
-// order, so this is stable), space i on limb i % LIMBS; overflow spills to any free anchor.
-function assign(list) {
-  const bySpace = new Map();
-  for (const a of list) {
-    if (!bySpace.has(a.space)) bySpace.set(a.space, []);
-    bySpace.get(a.space).push(a);
-  }
-  const used = new Array(ANCHORS.length).fill(null);
-  let s = 0;
-  const spill = [];
-  for (const group of bySpace.values()) {
-    const limb = s++ % LIMBS;
-    for (const a of group) {
-      const i = ANCHORS.findIndex((p, k) => p[2] === limb && used[k] === null);
-      if (i >= 0) used[i] = a;
-      else spill.push(a);
-    }
-  }
-  for (const a of spill) {
-    const i = used.indexOf(null);
-    if (i < 0) break;
-    used[i] = a;
-  }
-  return used;
-}
-
 export default class NkSakura extends View {
   init() {
     this.hover = null; // address of the hovered blossom
     this.over = false; // pointer anywhere on the tree
+    // Remembered limbOf[space] / slotOf[address] (see assign.js), so blossoms never jump.
+    Object.assign(this, newState());
+    // Fonts only change on start or a look change, which reloads the mod: check once.
+    this.jp = fonts().includes(FONT_JP);
   }
 
   render(cx) {
     const calm = props()?.intensity === "calm";
     const list = props()?.demo ? DEMO : agents();
-    const slots = assign(list);
-    const jp = fonts().includes(JP_FONT);
-    const jpf = (el) => (jp ? el.font_family(JP_FONT) : el);
+    const slots = assign(list, this);
+    const jpf = (el) => (this.jp ? el.font_family(FONT_JP) : el);
     const showList = this.over || Boolean(placement()?.hovered);
 
     const root = div()

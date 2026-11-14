@@ -1,4 +1,8 @@
 // Neo-Kyoto palette (gruvbox). Mods can't import across folders, so each nk mod carries a copy.
+
+// Font for the kanji labels; used only if fonts() lists it, else the default UI font.
+export const FONT_JP = "DotGothic16";
+
 export const P = {
   bg: "#0f0f0f",
   bg1: "#1d2021",
@@ -27,4 +31,3 @@ export const STATUS_COLOR = {
 
 export const statusColor = (s) => STATUS_COLOR[s] ?? STATUS_COLOR.unknown;
 export const kanji = (s) => KANJI[s] ?? KANJI.unknown;
-export const JP_FONT = "DotGothic16";
