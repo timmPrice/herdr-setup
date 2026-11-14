@@ -1,0 +1,187 @@
+{
+ "agents": [
+  {
+   "address": "t2k",
+   "pane": "p1",
+   "status": "blocked",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "rotate session keys in staging",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21"
+  },
+  {
+   "address": "t7p",
+   "pane": "p2",
+   "status": "done",
+   "title": "fish prompt cleanup",
+   "space": "s4",
+   "space_name": "dotfiles",
+   "tab": "tb41"
+  },
+  {
+   "address": "t4g",
+   "pane": "p3",
+   "status": "working",
+   "title": "restyle pane header",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto",
+   "tab": "tb11",
+   "focused": true
+  },
+  {
+   "address": "t8x",
+   "pane": "p4",
+   "status": "working",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "bump deps, fix breakage",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31"
+  },
+  {
+   "address": "t3m",
+   "pane": "p5",
+   "status": "idle",
+   "title": "drain old node pool",
+   "space": "s5",
+   "space_name": "infra",
+   "tab": "tb51"
+  }
+ ],
+ "panes": [
+  {
+   "pane": "p3",
+   "terminal": "t4g",
+   "tab": "tb11",
+   "title": "restyle pane header",
+   "cwd": "/home/op/repos/herdr-neo-kyoto",
+   "branch": "main",
+   "status": "working",
+   "focused": true,
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   }
+  },
+  {
+   "pane": "p1",
+   "terminal": "t2k",
+   "tab": "tb11",
+   "title": "rotate session keys",
+   "cwd": "/home/op/repos/api-gateway",
+   "branch": "feat/auth",
+   "status": "blocked",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   }
+  },
+  {
+   "pane": "p6",
+   "terminal": "t9a",
+   "tab": "tb11",
+   "title": "zsh",
+   "cwd": "/home/op/repos/api-gateway",
+   "branch": "feat/auth",
+   "status": null
+  }
+ ],
+ "spaces": [
+  {
+   "id": "s1",
+   "name": "herdr-neo-kyoto",
+   "active": true,
+   "status": "working",
+   "branch": "main",
+   "tabs": [
+    {
+     "id": "tb11",
+     "name": "BUILD",
+     "named": true,
+     "active": true,
+     "status": "blocked"
+    },
+    {
+     "id": "tb12",
+     "name": "REVIEW",
+     "named": true
+    },
+    {
+     "id": "tb13",
+     "name": "OPS",
+     "named": true
+    },
+    {
+     "id": "tb14",
+     "name": "SCRATCH",
+     "named": true
+    }
+   ]
+  },
+  {
+   "id": "s2",
+   "name": "api-gateway",
+   "status": "blocked",
+   "branch": "feat/auth",
+   "tabs": [
+    {
+     "id": "tb21",
+     "status": "blocked"
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "name": "web-portal",
+   "status": "working",
+   "tabs": [
+    {
+     "id": "tb31",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "name": "dotfiles",
+   "status": "done",
+   "tabs": [
+    {
+     "id": "tb41",
+     "status": "done"
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "name": "infra",
+   "status": "idle",
+   "tabs": [
+    {
+     "id": "tb51",
+     "status": "idle"
+    }
+   ]
+  }
+ ],
+ "props": {
+  "pane": "p1",
+  "intensity": "calm"
+ },
+ "shared": {
+  "ph.intensity": "calm"
+ }
+}

@@ -1,0 +1,668 @@
+{
+ "agents": [
+  {
+   "address": "t00",
+   "pane": "p0",
+   "status": "working",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t01",
+   "pane": "p1",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 1",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t02",
+   "pane": "p2",
+   "status": "done",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 2",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t03",
+   "pane": "p3",
+   "status": "working",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 3",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t04",
+   "pane": "p4",
+   "status": "blocked",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 4",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t05",
+   "pane": "p5",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t06",
+   "pane": "p6",
+   "status": "working",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 6",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t07verylongaddress",
+   "pane": "p7",
+   "status": "idle",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 7",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t08",
+   "pane": "p8",
+   "status": "working",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 8",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t09",
+   "pane": "p9",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 9",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": true
+  },
+  {
+   "address": "t10",
+   "pane": "p10",
+   "status": "done",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t11",
+   "pane": "p11",
+   "status": "working",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 11",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t12",
+   "pane": "p12",
+   "status": "blocked",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 12",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t13",
+   "pane": "p13",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 13",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t14",
+   "pane": "p14",
+   "status": "working",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 14",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t15",
+   "pane": "p15",
+   "status": "idle",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t16",
+   "pane": "p16",
+   "status": "working",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 16",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t17",
+   "pane": "p17",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 17",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t18",
+   "pane": "p18",
+   "status": "done",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 18",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t19",
+   "pane": "p19",
+   "status": "working",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 19",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t20",
+   "pane": "p20",
+   "status": "blocked",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s5",
+   "space_name": "infra",
+   "tab": "tb51",
+   "focused": false
+  },
+  {
+   "address": "t21",
+   "pane": "p21",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 21",
+   "space": "s6",
+   "space_name": "ml-pipeline",
+   "tab": "tb61",
+   "focused": false
+  },
+  {
+   "address": "t22",
+   "pane": "p22",
+   "status": "working",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 22",
+   "space": "s7",
+   "space_name": "docs",
+   "tab": "tb71",
+   "focused": false
+  },
+  {
+   "address": "t23",
+   "pane": "p23",
+   "status": "idle",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 23",
+   "space": "s8",
+   "space_name": "scratch",
+   "tab": "tb81",
+   "focused": false
+  },
+  {
+   "address": "t24",
+   "pane": "p24",
+   "status": "working",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 24",
+   "space": "s1",
+   "space_name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "tab": "tb11",
+   "focused": false
+  },
+  {
+   "address": "t25",
+   "pane": "p25",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s2",
+   "space_name": "api-gateway",
+   "tab": "tb21",
+   "focused": false
+  },
+  {
+   "address": "t26",
+   "pane": "p26",
+   "status": "done",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "task 26",
+   "space": "s3",
+   "space_name": "web-portal",
+   "tab": "tb31",
+   "focused": false
+  },
+  {
+   "address": "t27",
+   "pane": "p27",
+   "status": "working",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 27",
+   "space": "s4",
+   "space_name": "dotfiles",
+   "tab": "tb41",
+   "focused": false
+  },
+  {
+   "address": "t28",
+   "pane": "p28",
+   "status": "blocked",
+   "app": "claude",
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   },
+   "title": "task 28",
+   "space": "s5",
+   "space_name": "infra",
+   "tab": "tb51",
+   "focused": false
+  },
+  {
+   "address": "t29",
+   "pane": "p29",
+   "status": "idle",
+   "app": "codex",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   },
+   "title": "task 29",
+   "space": "s6",
+   "space_name": "ml-pipeline",
+   "tab": "tb61",
+   "focused": false
+  },
+  {
+   "address": "t30",
+   "pane": "p30",
+   "status": "working",
+   "app": "opencode",
+   "program": {
+    "key": "opencode",
+    "name": "opencode",
+    "agent": true
+   },
+   "title": "refactor the session token rotation so that every service picks up new keys without a restart and log it",
+   "space": "s7",
+   "space_name": "docs",
+   "tab": "tb71",
+   "focused": false
+  },
+  {
+   "address": "t31",
+   "pane": "p31",
+   "status": "idle",
+   "app": "gemini",
+   "program": {
+    "key": "gemini",
+    "name": "gemini",
+    "agent": true
+   },
+   "title": "task 31",
+   "space": "s8",
+   "space_name": "scratch",
+   "tab": "tb81",
+   "focused": false
+  }
+ ],
+ "panes": [
+  {
+   "pane": "p3",
+   "terminal": "t4g",
+   "tab": "tb11",
+   "title": "restyle pane header",
+   "cwd": "/home/op/repos/herdr-neo-kyoto",
+   "branch": "main",
+   "status": "working",
+   "focused": true,
+   "program": {
+    "key": "claude",
+    "name": "claude",
+    "agent": true
+   }
+  },
+  {
+   "pane": "p1",
+   "terminal": "t2k",
+   "tab": "tb11",
+   "title": "rotate session keys",
+   "cwd": "/home/op/repos/api-gateway",
+   "branch": "feat/auth",
+   "status": "blocked",
+   "program": {
+    "key": "codex",
+    "name": "codex",
+    "agent": true
+   }
+  },
+  {
+   "pane": "p6",
+   "terminal": "t9a",
+   "tab": "tb11",
+   "title": "zsh",
+   "cwd": "/home/op/repos/api-gateway",
+   "branch": "feat/auth",
+   "status": null
+  }
+ ],
+ "spaces": [
+  {
+   "id": "s1",
+   "name": "herdr-neo-kyoto-with-a-really-long-space-name",
+   "active": true,
+   "status": "working",
+   "branch": "feature/extremely-long-branch-name-for-truncation",
+   "tabs": [
+    {
+     "id": "tb11",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s2",
+   "name": "api-gateway",
+   "active": false,
+   "status": "working",
+   "branch": "feat/auth",
+   "tabs": [
+    {
+     "id": "tb21",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s3",
+   "name": "web-portal",
+   "active": false,
+   "status": "working",
+   "branch": "main",
+   "tabs": [
+    {
+     "id": "tb31",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s4",
+   "name": "dotfiles",
+   "active": false,
+   "status": "working",
+   "branch": "main",
+   "tabs": [
+    {
+     "id": "tb41",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s5",
+   "name": "infra",
+   "active": false,
+   "status": "working",
+   "branch": "ops/k8s",
+   "tabs": [
+    {
+     "id": "tb51",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s6",
+   "name": "ml-pipeline",
+   "active": false,
+   "status": "working",
+   "branch": "exp/lora",
+   "tabs": [
+    {
+     "id": "tb61",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "name": "docs",
+   "active": false,
+   "status": "working",
+   "branch": "main",
+   "tabs": [
+    {
+     "id": "tb71",
+     "status": "working"
+    }
+   ]
+  },
+  {
+   "id": "s8",
+   "name": "scratch",
+   "active": false,
+   "status": "working",
+   "branch": null,
+   "tabs": [
+    {
+     "id": "tb81",
+     "status": "working"
+    }
+   ]
+  }
+ ],
+ "props": {
+  "pane": "p1"
+ },
+ "shared": {
+  "ph.intensity": "full"
+ }
+}

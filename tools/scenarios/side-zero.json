@@ -1,0 +1,21 @@
+{
+ "agents": [],
+ "panes": [],
+ "spaces": [
+  {
+   "id": "s1",
+   "name": "home",
+   "active": true,
+   "status": null,
+   "tabs": [
+    {
+     "id": "tb11"
+    }
+   ]
+  }
+ ],
+ "props": {},
+ "shared": {
+  "ph.intensity": "full"
+ }
+}
