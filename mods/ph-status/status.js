@@ -47,3 +47,33 @@ export function gitSuffix(g) {
   if (!g) return "";
   return [g.ahead ? `↑${g.ahead}` : "", g.behind ? `↓${g.behind}` : "", g.dirty ? `+${g.dirty}` : ""].filter(Boolean).join(" ");
 }
+
+export const GIT_STALE_LOCAL_MS = 15000;
+export const GIT_STALE_REMOTE_MS = 60000;
+
+/** The cache key of a git read: machine + cwd (null when there is no cwd). */
+export function gitKeyOf(w) {
+  return w?.cwd ? `${w.machine ?? ""}|${w.cwd}` : null;
+}
+
+/**
+ * Whether to start a git read now. st = { key, at, busy, errKey }: the key and time of the last read
+ * started, a read in flight, and the key whose last read failed (no retry until the cwd changes).
+ * Re-reads after 15 s locally, 60 s on another machine.
+ */
+export function needGit(st, key, now, remote) {
+  if (!key || st.busy) return false;
+  if (key === st.errKey) return false;
+  if (key !== st.key) return true;
+  return now - st.at > (remote ? GIT_STALE_REMOTE_MS : GIT_STALE_LOCAL_MS);
+}
+
+/**
+ * The key bound to an action, from keys(): the first binding in `section`, else in any section,
+ * else `fallback`. A key string ending in "--" (the minus key) is kept as is.
+ */
+export function keyFor(list, action, section, fallback) {
+  const bs = (Array.isArray(list) ? list : []).filter((b) => b && b.action === action && b.keys);
+  const b = bs.find((x) => x.section === section) ?? bs[0];
+  return b ? String(b.keys) : fallback;
+}
