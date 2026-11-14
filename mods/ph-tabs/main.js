@@ -94,17 +94,18 @@ export default class PhTabs extends View {
           .on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id }); }).child("×"))));
   }
 
+  // Shrinks before the tab scroller is squeezed: the branch goes first, then the space name truncates.
   readout(space) {
     const n = space ? panes().filter((p) => space.tabs.some((t) => t.id === p.tab)).length : 0;
-    const sep = () => div().text_color(P.line).child("//");
-    return h_flex().flex_none().gap(8).items_center().text_size(12).text_color(P.dim)
-      .child(h_flex().gap(5).child(div().child("NODE"))
-        .child(div().font_family(FONT_NUM).text_size(16).text_color(P.dim2).child(String(space?.index ?? 0).padStart(2, "0")))
-        .child(div().max_w(220).truncate().text_color(P.dim2).child(space?.name ?? "-")))
-      .when(Boolean(space?.branch), (el) => el.child(sep())
-        .child(h_flex().child(div().child("git:")).child(div().max_w(200).truncate().text_color(P.dim2).child(space.branch))))
+    const sep = () => div().flex_none().text_color(P.line).child("//");
+    return h_flex().flex_shrink(1).min_w(0).overflow_hidden().gap(8).items_center().text_size(12).text_color(P.dim)
+      .child(h_flex().flex_shrink(1).min_w(0).overflow_hidden().gap(5).child(div().flex_none().child("NODE"))
+        .child(div().flex_none().font_family(FONT_NUM).text_size(16).text_color(P.dim2).child(String(space?.index ?? 0).padStart(2, "0")))
+        .child(div().min_w(0).max_w(220).truncate().text_color(P.dim2).child(space?.name ?? "-")))
+      .when(Boolean(space?.branch), (el) => el.child(h_flex().flex_shrink(20).min_w(0).overflow_hidden().gap(8)
+        .child(sep()).child(div().flex_none().child("git:")).child(div().min_w(0).max_w(200).truncate().text_color(P.dim2).child(space.branch))))
       .child(sep())
-      .child(h_flex().gap(5).child(div().child("PANES"))
+      .child(h_flex().flex_none().gap(5).child(div().child("PANES"))
         .child(div().font_family(FONT_NUM).text_size(16).text_color(P.dim2).child(String(n).padStart(2, "0"))));
   }
 
@@ -136,7 +137,7 @@ export default class PhTabs extends View {
       .font_family(FONT_UI)
       .on_mouse_up("left", () => { this.pressed = null; })
       .on_scroll_wheel((e) => { if (Math.abs(e.delta.y) >= 1) run(e.delta.y > 0 ? "tab.prev" : "tab.next"); })
-      .child(h_flex().id("ph-tab-scroll").flex_1().min_w(0).h_full().items_center().gap(4).overflow_x_scrollbar().track_scroll(this.scroll)
+      .child(h_flex().id("ph-tab-scroll").flex_1().min_w(200).h_full().items_center().gap(4).overflow_x_scrollbar().track_scroll(this.scroll)
         .on_size_change((_s, cx) => { if (active >= 0) { this.scroll.scroll_to_item(active); cx.notify(); } })
         .children(shown.map((c, i) => this.tab(c, i, shown, space, active, calm)))
         .child(div().id("ph-tab-new").h(TH).px(8).flex_none().flex().items_center().cursor_pointer().text_size(14).text_color(P.dim)

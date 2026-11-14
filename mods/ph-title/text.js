@@ -13,15 +13,13 @@ export function summary(list = []) {
   return { total: `${n} daemon${n === 1 ? "" : "s"}`, parts };
 }
 
-/** Oldest blocked first: lowest seq (higher seq = changed more recently). */
-export function oldest(blocked = []) {
-  return blocked.slice().sort((a, b) => (a?.seq ?? 0) - (b?.seq ?? 0))[0] ?? null;
-}
-
-/** Alert strip pieces for the blocked agents. */
-export function alertText(blocked = [], key = "ctrl-shift-u") {
+/**
+ * Alert strip pieces for the blocked agents. `target` is the agent ph-kit.respond will focus
+ * (oldestBlocked(list, since) from lib/since.js); without it, the first blocked agent.
+ */
+export function alertText(blocked = [], key = "ctrl-shift-u", target = null) {
   const n = blocked.length;
-  const a = oldest(blocked);
+  const a = target ?? blocked[0] ?? null;
   const prog = a?.program?.name || a?.app || "agent";
   const what = [a?.space_name, a?.title].filter(Boolean).join(" · ");
   return {

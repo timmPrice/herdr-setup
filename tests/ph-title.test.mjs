@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summary, alertText, respondKey, clockText, uplink, oldest } from "../mods/ph-title/text.js";
+import { summary, alertText, respondKey, clockText, uplink } from "../mods/ph-title/text.js";
+import { Since, oldestBlocked } from "../mods/ph-title/lib/since.js";
 import { tabLabel, estWidth } from "../mods/ph-tabs/text.js";
 
 const A = (address, status, seq, extra = {}) => ({ address, status, seq, ...extra });
@@ -13,15 +14,26 @@ test("summary counts non-zero states in RUN WAIT OK IDLE order", () => {
   assert.equal(summary([A("a", "idle", 1)]).total, "1 daemon");
 });
 
-test("alert names the oldest blocked agent and pluralises", () => {
+test("alert names the given target and pluralises", () => {
   const b = [A("t9z", "blocked", 9, { app: "claude" }), A("t2k", "blocked", 2, { program: { name: "codex" }, space_name: "api-gateway", title: "rotate keys" })];
-  assert.equal(oldest(b).address, "t2k");
-  const t = alertText(b, "ctrl-shift-u");
+  const t = alertText(b, "ctrl-shift-u", b[1]);
   assert.equal(t.head, "2 DAEMONS NEED YOU");
   assert.equal(t.who, "codex@t2k");
   assert.equal(t.what, "· api-gateway · rotate keys");
   assert.equal(alertText([b[0]]).head, "1 DAEMON NEEDS YOU");
   assert.equal(alertText([b[0]]).who, "claude@t9z");
+});
+
+test("alert names the agent ph-kit.respond focuses, even when seq order disagrees", () => {
+  // A blocked first (t=1000), B later (t=2000); then A's title changes, so A.seq > B.seq.
+  const since = new Since();
+  since.observe([A("tA", "working", 1), A("tB", "working", 2)], 0);
+  since.observe([A("tA", "blocked", 3), A("tB", "working", 2)], 1000);
+  since.observe([A("tA", "blocked", 3), A("tB", "blocked", 4)], 2000);
+  const list = [A("tA", "blocked", 9, { app: "claude" }), A("tB", "blocked", 4, { app: "codex" })];
+  const target = oldestBlocked(list, since, 3000);
+  assert.equal(target.address, "tA"); // what ph-kit.respond focuses
+  assert.equal(alertText(list.filter((a) => a.status === "blocked"), "ctrl-shift-u", target).who, "claude@tA");
 });
 
 test("respond key from keys(), layout section first", () => {
