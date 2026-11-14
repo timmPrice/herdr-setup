@@ -18,8 +18,8 @@ Left to right, top to bottom (sizes at zoom 1):
   panes and a hidden 368px Files/Changes panel, then the `workspace-status` bar (28px).
 - **Panes** are cards: 10px radius, 8px gap, `background` fill, 1px `border`, framed even when alone.
   The focused pane's border is aqua #8ec07c. Terminal padding 14×12px.
-- **Pane header** (30px, top, always shown), left to right: a neon sign chip with the status kanji in
-  DotGothic16 at 13.33px (16 device px at zoom 1.2), the pane's name, its folder (muted, truncated), a
+- **Pane header** (32px, top, always shown), left to right: a neon sign chip (22px tall) with the status
+  kanji in Kosugi Maru at 16px, the pane's name, its folder (muted, truncated), a
   git-branch icon and branch (muted). A pane without an agent shows a 6px dot instead of the sign.
   Status → kanji and color: working 稼働 aqua #8ec07c, idle 待機 grey #928374, blocked 警告 orange
   #fe8019, done 完了 pink #d3869b, unknown 不明 grey. The chip is filled with the color at 0x22 alpha
@@ -74,19 +74,19 @@ Left to right, top to bottom (sizes at zoom 1):
 - `mods/nk-pane` (`place: none`): reads `panes()` (status, focused, title, cwd, branch, program),
   `props()`, `theme()`, `layout()`; runs `pane.focus`, `pane.split`, `pane.zoom`, `pane.close`.
   Motion is native: `loop("opacity")` for the pulse, `.frames()` on the bright text copy for the
-  flicker (a dim copy sits underneath). Ships `fonts/DotGothic16-nk.ttf` (a subset: the status kanji,
-  桜判通知, katakana, ASCII and U+3000) plus OFL.txt; the shipped pane mod's button SVGs.
+  flicker (a dim copy sits underneath). Ships `fonts/KosugiMaru-nk.ttf` (a subset: the status kanji,
+  桜判通知, katakana, ASCII, … and U+3000) plus its Apache LICENSE.txt and NOTICE.txt; the shipped pane mod's button SVGs.
   At start it copies its `intensity` into `setShared("nk.intensity")` (only when it differs).
 - `mods/nk-sakura` (`place: none`): reads `agents()`, `placement()`, `fonts()`; runs `agent.focus`.
   `tree-v1.svg` drawn once with `image()`, `blossom.svg`, `petal.svg` and `lantern.svg` tinted with
   `svg()`. The mapping lives in `assign.js` (pure, node-tested), remembered per copy in
   `limbOf` / `slotOf`. Petals: an outer div looping `left` (sway) around an inner one looping `top` (drop). Uses
-  DotGothic16 only if `fonts()` lists it. `props.demo: true` shows 9 fake agents for testing.
+  Kosugi Maru only if `fonts()` lists it. `props.demo: true` shows 9 fake agents for testing.
 - `mods/nk-toast` (`place: none`): reads `props()` (title, body, level, icon, action, timeout, overlay)
   and `shared("nk.intensity")`; `closeOverlay`, `run` for the action, `cx.write_to_clipboard` for Copy.
   `kind.js` classifies: level error/warning → 警告, success → 完了, title `… needs you` → 警告,
   `… finished` → 完了, login body → 警告, warning words → 警告, done words → 完了, else 通知.
-  The seals (`seal-{done,warn,info}-v3.svg`, 72×100) have the kanji baked in as DotGothic16 outlines
+  The seals (`seal-{done,warn,info}-v4.svg`, 72×100) have the kanji baked in as Kosugi Maru outlines
   by `tools/make_seals.py`, so the toast needs no font.
 - `intensity.sh` edits `intensity` in every `nk-*` props of the installed layout; `install.sh` keeps it.
 
@@ -100,9 +100,10 @@ Left to right, top to bottom (sizes at zoom 1):
 - Herdr's toast titles end in ` needs you` / ` finished` after a user-chosen name; match those
   suffixes before any keyword, or "release-ready needs you" gets a done seal.
 - `.frames()` only cycles text, so the flicker needs the dim copy underneath and U+3000 (ideographic
-  space) in the font to hold each character's place. ▸ and ◂ are not in DotGothic16.
-- DotGothic16 is a 16px pixel font: other sizes blur. Herdr caches images by path, so bump the seal
-  file version when the art changes.
+  space) in the font to hold each character's place. ▸ ◂ → • · are not in the Kosugi Maru subset.
+- Kosugi Maru is Apache 2.0, not OFL: ship its LICENSE.txt and a NOTICE saying it was subset. Its family
+  name is "Kosugi Maru" (with a space). Herdr caches images by path, so bump the seal file version when
+  the art changes.
 - `loop()` is ping-pong: petals float back up rather than fall forever. Keep the tree a fixed size so
   hover never changes the float's layout. More than 30 agents: the extras get no blossom.
 - A blocked pane in full mode keeps the window redrawing on a 60ms clock until answered; calm stops it.

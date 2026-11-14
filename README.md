@@ -64,5 +64,6 @@ Your own layouts, keys and settings are never touched.
 
 ## Credits
 
-The kanji use [DotGothic16](https://fonts.google.com/specimen/DotGothic16) (SIL OFL 1.1; licence files in
-`mods/nk-pane/fonts/OFL.txt` and `mods/nk-toast/OFL.txt`).
+The kanji use [Kosugi Maru](https://fonts.google.com/specimen/Kosugi+Maru) by MOTOYA (Apache License 2.0;
+`LICENSE.txt` and `NOTICE.txt` in `mods/nk-pane/fonts/` and `mods/nk-toast/`). nk-pane ships a subset of it;
+the toast seals have its outlines baked in as SVG paths.
