@@ -50,7 +50,8 @@ export default class PhTitle extends View {
       const tl = layout()?.traffic_lights;
       if (w?.platform === "macos" && w.titlebar === "none" && !w.fullscreen && tl) lights = (tl[0] + 64) / (settings()?.zoom || 1);
     } catch {}
-    return h_flex().h_full().flex_shrink(50).min_w(0).overflow_hidden().pl(lights).items_center()
+    // The wordmark + version never shrink; only the TTY tag and the echo give way (fast: shrink 50 vs the centre's 1).
+    return [h_flex().h_full().flex_none().pl(lights).items_center()
       // Wordmark plate: amber = "you are here". Cut corner bottom-right, as in the mockup.
       .child(div().relative().w(132).h(H).flex_none()
         .child(plate(132, H, P.amber, { cut: 8, corners: "br" }))
@@ -58,13 +59,15 @@ export default class PhTitle extends View {
           .child(div().font_family(FONT_MARK).text_size(13).child("HERDR/OS"))
           .child(div().font_family(FONT_JP).text_size(12).child("端末"))))
       .when(Boolean(ver), (el) => el.child(div().pl(8).flex_none().font_family(FONT_NUM).text_size(16).text_color(P.dim).child(`v${ver}`)))
+      ,
       // TTY tag and echo shrink (then vanish) before the summary/UPLINK/clock are touched.
+      h_flex().h_full().flex_shrink(50).min_w(0).overflow_hidden().items_center()
       .child(h_flex().pl(10).gap(5).flex_shrink(1).min_w(0).overflow_hidden().items_center().text_size(12).text_color(P.dim)
         .child(div().flex_none().px(4).border(1).border_color(P.line).text_color(P.dim2).child("TTY0"))
         .child(div().child("·"))
         .child(div().min_w(0).truncate().child("phosphor")))
       .child(h_flex().pl(14).gap(0).items_center().text_size(12).text_color(P.grey).flex_shrink(4).min_w(0).overflow_hidden()
-        .child(div().min_w(0).truncate().child("root@herdr:~# watch --daemons")));
+        .child(div().min_w(0).truncate().child("root@herdr:~# watch --daemons")))];
   }
 
   alert(blocked, target, calm) {
@@ -76,13 +79,14 @@ export default class PhTitle extends View {
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => { cx.stop_propagation(); this.respond(target); })
       .child(band("ph-alert-l", "tl"))
+      // Narrow: the what-part goes first, then the agent name and head truncate; key + RESPOND stay.
       .child(h_flex().flex_1().min_w(0).px(10).gap(8).items_center().text_size(12.5).overflow_hidden()
         .child(div().flex_none().font_family(FONT_TERM).text_size(10).text_color(P.red).child("▲"))
         .child(div().flex_none().font_family(FONT_JP).text_size(13).text_color(P.red).child("要求"))
-        .child(div().flex_none().text_color(P.red).child(t.head))
+        .child(div().flex_shrink(1).min_w(0).truncate().text_color(P.red).child(t.head))
         .child(div().flex_none().text_color(P.grey).child("//"))
-        .child(div().flex_none().text_color(P.fg).child(t.who))
-        .child(div().flex_1().min_w(0).truncate().text_color(P.dim2).child(t.what))
+        .child(div().flex_shrink(2).min_w(0).truncate().text_color(P.fg).child(t.who))
+        .child(div().flex_1().flex_shrink(100).min_w(0).truncate().text_color(P.dim2).child(t.what))
         .child(div().flex_none().text_color(alpha(P.red, 0.8)).child(t.key))
         .child(div().flex_none().text_color(P.red).child("RESPOND ›")))
       .child(band("ph-alert-r", "br"));
@@ -128,7 +132,7 @@ export default class PhTitle extends View {
     const target = oldestBlocked(list, this.since);
     return h_flex().id("ph-title").size_full().items_center().bg(P.void).border_b(1).border_color(P.line)
       .font_family(FONT_UI).text_color(P.fg)
-      .child(this.left(w))
+      .children(this.left(w))
       .child(h_flex().flex_auto().min_w(0).h_full().px(16).items_center().justify_center().overflow_hidden()
         .child(blocked.length ? this.alert(blocked, target, calm) : this.quiet(list)))
       .child(this.right(w));
