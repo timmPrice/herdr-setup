@@ -27,8 +27,9 @@ Left to right, top to bottom (sizes at zoom 1):
   Unfocused signs sit at opacity 0.72, idle ones at 0.5.
 - **Sakura tree**: a 280×220 floating block on the pane area, right edge, top (Herdr draws its frame).
   A brown gruvbox trunk and five limbs (#504945, #7c6f64, #3c3836) with 30 blossom spots. Each agent
-  is a blossom; each space gets a limb (centre, left-upper, right-upper, left-low, right-low, in order
-  of first appearance), overflow spills to any free spot. Empty spots are small dim buds (#9a737e,
+  is a blossom; each space gets a limb (centre, left-upper, right-upper, left-low, right-low). A space
+  keeps its limb and an agent keeps its spot while they exist; newcomers take the lowest free limb or
+  spot, overflow spills to any free spot, so blossoms never jump when agents come and go. Empty spots are small dim buds (#9a737e,
   opacity 0.6). The bottom-left corner holds a one-line summary, e.g. `警告2 完了2 稼働3 待機2`.
 - **Toasts** (bottom right, Herdr's overlay): a #1d2021 card with a 1px border in the kind's color and
   a tall red hanko seal (#fb4934, cream #fbf1c7 kanji, ink-jittered edge) on the left, title and body
@@ -78,7 +79,8 @@ Left to right, top to bottom (sizes at zoom 1):
   At start it copies its `intensity` into `setShared("nk.intensity")` (only when it differs).
 - `mods/nk-sakura` (`place: none`): reads `agents()`, `placement()`, `fonts()`; runs `agent.focus`.
   `tree-v1.svg` drawn once with `image()`, `blossom.svg`, `petal.svg` and `lantern.svg` tinted with
-  `svg()`. Petals: an outer div looping `left` (sway) around an inner one looping `top` (drop). Uses
+  `svg()`. The mapping lives in `assign.js` (pure, node-tested), remembered per copy in
+  `limbOf` / `slotOf`. Petals: an outer div looping `left` (sway) around an inner one looping `top` (drop). Uses
   DotGothic16 only if `fonts()` lists it. `props.demo: true` shows 9 fake agents for testing.
 - `mods/nk-toast` (`place: none`): reads `props()` (title, body, level, icon, action, timeout, overlay)
   and `shared("nk.intensity")`; `closeOverlay`, `run` for the action, `cx.write_to_clipboard` for Copy.
@@ -109,7 +111,8 @@ Left to right, top to bottom (sizes at zoom 1):
 ## Done when
 
 - `./check.sh` prints `ok` for `mods/nk-pane`, `mods/nk-sakura` and `mods/nk-toast`;
-  `node mods/nk-toast/tools/kind.test.mjs` prints `ok 24/24`.
+  `node mods/nk-toast/tools/kind.test.mjs` prints `ok 24/24`; `node mods/nk-sakura/tools/assign.test.mjs`
+  passes 8/8.
 - After `./install.sh` and `herdr-app do layout.switch '{"name":"neo-kyoto"}'`, `herdr-app status`
   shows layout `neo-kyoto` and `errors: []`.
 - A pane running an agent shows 稼働 while it works and 待機 when idle; a plain shell shows a dot.
