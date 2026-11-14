@@ -27,19 +27,21 @@ def glow():
     out.putalpha(alpha)
     out.save(os.path.join(root, "mods/ph-boot/wordmark-glow.png"), optimize=True)
 
-def scanlines(w, h, period, line_alpha):
-    """Dark gaps every `period` px over transparent: the image only darkens what's under it slightly.
-    Fully opaque base is the pane colour so terminals keep their background."""
+def scanlines(w, h, period, line):
+    """Faint amber phosphor rows every `period` px on the terminal background colour.
+    Tuned live (Herdr, 2026-11): terminal_opacity's see-through is about (1 - opacity)^2 and
+    blends in linear light, so DARK gaps vanish under terminals at any useful opacity; BRIGHT
+    rows survive. With terminal_opacity 0.7 these rows lift the terminal background by ~3
+    levels (18 -> 21): visible up close, text contrast unchanged. Gutters show the raw rows."""
     base = (0x12, 0x11, 0x0e)
-    dark = tuple(max(0, round(c * (1 - line_alpha))) for c in base)
     img = Image.new("RGB", (w, h), base)
     d = ImageDraw.Draw(img)
     for y in range(period - 1, h, period):
-        d.line([(0, y), (w - 1, y)], fill=dark)
+        d.line([(0, y), (w - 1, y)], fill=line)
     return img
 
 if __name__ == "__main__":
     glow()
     w, h = (int(x) for x in (sys.argv[1:3] if len(sys.argv) > 2 else ("5120", "1440")))
-    scanlines(w, h, 3, 0.45).save(os.path.join(root, "backgrounds/phosphor-scanlines.png"), optimize=True)
+    scanlines(w, h, 3, (64, 52, 30)).save(os.path.join(root, "backgrounds/phosphor-scanlines.png"), optimize=True)
     print("ok")

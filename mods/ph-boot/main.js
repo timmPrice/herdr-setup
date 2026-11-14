@@ -9,7 +9,7 @@
 import { View, div, image, PathBuilder } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import {
-  props, shared, spaces, agents, terminals, layout, fonts, focused, updates,
+  props, shared, spaces, agents, terminals, layout, fonts, focused, updates, settings,
   closeOverlay, run, readTextFile,
 } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_MARK, FONT_JP, FONT_TERM, KANJI, alpha } from "./lib/palette.js";
@@ -122,7 +122,11 @@ export default class PhBoot extends View {
     if (this.skip || this.closed) return root;
 
     const skip = (_e, cx) => { cx.stop_propagation(); this.close(true); };
-    const winW = this.size?.width ?? 1600, winH = this.size?.height ?? 900;
+    // on_size_change reports zoomed px (seen live: 504x288 for a 420x240 block at zoom 1.2); element sizes are unzoomed.
+    let z = 1;
+    try { z = Number(settings()?.zoom) || 1; } catch {}
+    const pxW = this.size?.width ?? 1600 * z, pxH = this.size?.height ?? 900 * z;
+    const winW = pxW / z, winH = pxH / z;
     const W = Math.max(560, Math.min(1120, winW - 48));
     const pad = 36;
     const nLines = Math.max(this.total ?? 6, this.lines.length);
@@ -162,7 +166,7 @@ export default class PhBoot extends View {
       .child(div().font_family(FONT_JP).text_size(40).text_color(P.amber).child(KANJI.boot))
       .child(v_flex().gap(4).font_family(FONT_UI).text_size(15).text_color(P.dim2)
         .child(h_flex().gap(8).child(div().text_color(P.fg).child("PHOSPHOR CONSOLE")).child("·").child("tty0"))
-        .child(div().child([`herdr ${this.version ?? ""}`.trim(), `layout ${lay}`, `${Math.round(winW)}×${Math.round(winH)}`].join(" · "))))
+        .child(div().child([`herdr ${this.version ?? ""}`.trim(), `layout ${lay}`, `${Math.round(pxW)}×${Math.round(pxH)}`].join(" · "))))
       .child(div().flex_1())
       .child(v_flex().items_end().font_family(FONT_NUM).text_size(26).line_height(1)
         .child(div().text_color(P.dim2).child(`BOOT 0x${this.bootId}`))
