@@ -95,7 +95,7 @@ export default class PhStatus extends View {
   count(k, n) {
     const s = STATES[k];
     const on = n > 0;
-    let el = h_flex().flex_none().gap(4).items_baseline()
+    let el = h_flex().flex_none().gap(4).items_center()
       .child(div().text_color(on ? s.color : P.grey).child(s.short))
       .child(div().font_family(FONT_NUM).text_size(17).text_color(on ? s.color : P.grey).child(String(n)));
     if (k === "blocked" && on) {
@@ -135,7 +135,7 @@ export default class PhStatus extends View {
         .child(plate(84, H, P.amber, { cut: 8, corners: "br" }))
         .child(div().absolute().left(0).top(0).w(84).h(H).flex().items_center().pl(10)
           .text_color(P.void).child("NORMAL")))
-      .child(h_flex().flex_none().gap(5).items_baseline()
+      .child(h_flex().flex_none().gap(5).items_center()
         .child(div().text_color(P.dim).child("daemons"))
         .child(div().font_family(FONT_NUM).text_size(17).text_color(P.fg).child(String(list.length))))
       .child(h_flex().flex_none().gap(10).items_center().children(ORDER.map((k) => this.count(k, c[k]))))

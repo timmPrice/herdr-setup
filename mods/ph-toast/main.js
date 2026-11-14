@@ -101,12 +101,13 @@ export default class PhToast extends View {
           .child(this.tag(STATES.blocked.tag, P.red, true))
           .child(h_flex().flex_1().min_w(0).overflow_hidden().text_size(13)
             .child(div().flex_none().text_color(P.fg).font_weight(700).child(who))
-            .child(div().truncate().text_color(P.dim2).child(".service needs input")))
+            .child(div().min_w(0).truncate().text_color(P.dim2).child(".service"))
+            .child(div().flex_none().text_color(P.dim2).child("\u00a0needs input")))
           .child(div().flex_none().font_family(FONT_JP).text_size(16).text_color(P.red).child(STATES.blocked.kanji)))
         .when(Boolean(what), (el) => el.child(div().truncate().font_family(FONT_TERM).text_size(12).text_color(P.fgTerm).child(what)))
         .child(line(this.key(RESPOND_KEY, P.red))
           .child(dimText("jump to pane", P.dim2))
-          .when(Boolean(a), (el) => el.child(div().truncate().text_size(11).text_color(P.dim).child(`· ${this.where(a)} · pane ${a.address}`))));
+          .when(Boolean(a), (el) => el.child(div().truncate().text_size(11).text_color(P.dim).child(`· ${this.where(a)}`))));
     }
 
     if (kind === "done" && ev?.event === "done") {
