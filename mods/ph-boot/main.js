@@ -3,19 +3,22 @@
 //
 // - Lines append every ~160 ms (faster if there are many), the 40-cell bar fills, then it closes itself.
 // - Any key, any click (or Esc) skips it at once.
-// - Never in calm. Never twice per app run: module scope (survives layout switches) plus sessionStorage
-//   (survives hot reload of this mod, gone when the app quits). ph-title has its own guard as well.
+// - Never in calm. Never twice per app run. Tested live (2026-11-14): sessionStorage is per mod copy (every
+//   overlay copy starts empty), and module scope dies when this mod's source reloads. So the guard is a
+//   per-process run id (boot_id + pid + starttime from /proc) kept in shared state: it matches for the
+//   whole run and never after a restart. Module scope stays as the fast path (and the only guard without /proc).
+// - The log is one snapshot of real data (taken once the host's lists have filled in), revealed line by line.
 // - Timers here are a one-off, ~10 redraws in total; nothing loops after it closes.
 import { View, div, image, PathBuilder } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
 import {
-  props, shared, spaces, agents, terminals, layout, fonts, focused, updates, settings,
+  props, shared, setShared, spaces, agents, terminals, layout, fonts, focused, updates, settings,
   closeOverlay, run, readTextFile,
 } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_MARK, FONT_JP, FONT_TERM, KANJI, alpha } from "./lib/palette.js";
 import { isCalm, cursor } from "./lib/motion.js";
 import { plate, glowOutline } from "./lib/plate.js";
-import { bootLines, parseTelemetry, stepFor, cellsFor } from "./bootlines.js";
+import { bootLines, parseTelemetry, stepFor, cellsFor, runId, snapshotReady, focusTarget } from "./bootlines.js";
 
 const RAN_KEY = "ph.boot.ran";
 const HOLD = 260;            // ms the full bar stays up before closing
@@ -26,15 +29,6 @@ const GLOW = "mods/ph-boot/wordmark-glow.png";
 
 let ranThisModule = false;   // module scope: shared by every copy while this source version lives
 
-function alreadyRan() {
-  if (ranThisModule) return true;
-  try { return !!sessionStorage.getItem(RAN_KEY); } catch { return false; }
-}
-function markRan() {
-  ranThisModule = true;
-  try { sessionStorage.setItem(RAN_KEY, String(Date.now())); } catch {}
-}
-
 async function readOr(path) {
   try { return await readTextFile(path); } catch { return null; }
 }
@@ -42,59 +36,77 @@ async function readOr(path) {
 export default class PhBoot extends View {
   init(_props, cx) {
     this.size = null;
-    this.lines = [];          // frozen lines shown so far
+    this.lines = [];          // the snapshot lines shown so far
+    this.snap = null;         // the whole log, taken once
     this.telemetry = null;
     this.closed = false;
+    this.live = false;        // false until the guard said yes: render stays an empty transparent root
     this.started = Date.now();
     this.bootId = (this.started & 0xffff).toString(16).toUpperCase().padStart(4, "0");
     // props.replay (an explicit re-open, e.g. a test or a future "replay boot" command) bypasses the once-per-run guard, never calm.
-    this.skip = isCalm() || (!props()?.replay && alreadyRan());
-    if (this.skip) { cx.timer.after(0, () => this.close(false)); return; }
-    markRan();
-    this.returnPane = focused()?.pane ?? null;
+    const replay = !!props()?.replay;
+    if (isCalm() || (!replay && ranThisModule)) { this.skip = true; cx.timer.after(0, () => this.close(false)); return; }
+    ranThisModule = true;     // claimed now, so a second copy opened in the same moment skips
+    let f = null;
+    try { f = focused(); } catch {}
+    this.returnPane = f?.pane ?? null;
+    this.returnTerminal = f?.terminal ?? null;
     this.h = cx.focus_handle();
     try { this.version = updates()?.app?.version ?? null; } catch { this.version = null; }
 
-    // /proc telemetry, off the UI thread; lines appended later pick it up.
+    // Guard, telemetry and snapshot off the UI thread (a few small /proc reads), then the boot starts.
     cx.spawn(async (cx) => {
-      const [cpuinfo, meminfo, route] = await Promise.all(["/proc/cpuinfo", "/proc/meminfo", "/proc/net/route"].map(readOr));
+      const [stat, boot, cpuinfo, meminfo, route] = await Promise.all(
+        ["/proc/self/stat", "/proc/sys/kernel/random/boot_id", "/proc/cpuinfo", "/proc/meminfo", "/proc/net/route"].map(readOr));
+      const id = runId(stat, boot);
+      let prev = null;
+      try { prev = shared(RAN_KEY); } catch {}
+      if (this.closed || (!replay && id && prev === id)) { this.skip = true; this.close(false); return; }
+      if (id && prev !== id) { try { setShared(RAN_KEY, id); } catch {} }
+
       const t = parseTelemetry({ cpuinfo, meminfo, route });
       if (t.iface) t.speed = parseTelemetry({ speed: await readOr(`/sys/class/net/${t.iface}/speed`) }).speed;
       this.telemetry = t;
+      this.start(cx);
     });
-
-    // Estimate the line count now for the pace; it is re-derived each tick from live data.
-    this.step = stepFor(this.fresh().length);
-    this.append();
-    const tick = (cx) => {
-      if (this.closed) return;
-      if (this.append()) { cx.notify(); cx.timer.after(this.step, tick); }
-      else { cx.notify(); cx.timer.after(HOLD, () => this.close(true)); }
-    };
-    cx.timer.after(this.step, tick);
-    cx.timer.after(0, () => { try { this.h.focus(); } catch {} });
-    // Safety: whatever happens, never stay up longer than 2.5 s.
-    cx.timer.after(2500, () => this.close(true));
   }
 
-  fresh() {
+  start(cx) {
+    if (this.closed) return;
+    this.live = true;
+    try { this.h.focus(); } catch {}
+    // Safety: whatever happens, never stay up longer than 2.5 s.
+    cx.timer.after(2500, (cx) => this.close(true));
+    const t0 = Date.now();
+    const settle = (cx) => {
+      if (this.closed) return;
+      const data = this.data();
+      if (!snapshotReady(data, Date.now() - t0)) { cx.timer.after(50, settle); return; }
+      this.snap = this.build(data);
+      this.step = stepFor(this.snap.length);
+      const tick = (cx) => {
+        if (this.closed) return;
+        this.lines = this.snap.slice(0, this.lines.length + 1);
+        cx.notify();
+        if (this.lines.length < this.snap.length) cx.timer.after(this.step, tick);
+        else cx.timer.after(HOLD, (cx) => this.close(true));
+      };
+      tick(cx);
+    };
+    settle(cx);
+  }
+
+  data() {
+    const get = (fn, d) => { try { return fn() ?? d; } catch { return d; } };
+    return { spaces: get(spaces, []), agents: get(agents, []), terminals: get(terminals, []) };
+  }
+
+  build(data) {
     let tree = null, name = null, have = [];
     try { tree = layout(); } catch {}
     try { name = shared("layout"); } catch {}
     try { have = fonts(); } catch {}
-    return bootLines({
-      layout: name, tree, fontsWanted: FONTS, fontsHave: have,
-      spaces: spaces() ?? [], agents: agents() ?? [], terminals: terminals() ?? [], telemetry: this.telemetry,
-    });
-  }
-
-  /** Freeze the next line from live data. Returns true while more lines remain. */
-  append() {
-    const f = this.fresh();
-    if (this.lines.at(-1)?.last) return false;
-    this.lines.push(f[Math.min(this.lines.length, f.length - 1)]);
-    this.total = Math.max(f.length, this.lines.length);
-    return !this.lines.at(-1).last;
+    return bootLines({ layout: name, tree, fontsWanted: FONTS, fontsHave: have, ...data, telemetry: this.telemetry });
   }
 
   close(refocus) {
@@ -102,8 +114,16 @@ export default class PhBoot extends View {
     this.closed = true;
     const id = props()?.overlay;
     if (id) closeOverlay(id);
-    // Hand the keyboard back to the pane that had it (the overlay took it to catch skip keys).
-    if (refocus && this.returnPane) { try { run("pane.focus", { pane: this.returnPane }); } catch {} }
+    // Hand the keyboard back (the overlay took it to catch skip keys); see focusTarget for the fallbacks.
+    if (refocus) { const to = this.returnTarget(); if (to) { try { run("pane.focus", to); } catch {} } }
+  }
+
+  returnTarget() {
+    let now = null, sp = [], ts = [];
+    try { now = focused(); } catch {}
+    try { sp = spaces() ?? []; } catch {}
+    try { ts = terminals() ?? []; } catch {}
+    return focusTarget({ pane: this.returnPane, terminal: this.returnTerminal }, now, sp, ts);
   }
 
   scan(w, h) {
@@ -120,7 +140,7 @@ export default class PhBoot extends View {
   render(cx) {
     const root = div().id("ph-boot").size_full().relative()
       .on_size_change((size, cx) => { this.size = size; cx.notify(); });
-    if (this.skip || this.closed) return root;
+    if (this.skip || this.closed || !this.live) return root;
 
     const skip = (_e, cx) => { cx.stop_propagation(); this.close(true); };
     // on_size_change reports zoomed px (seen live: 504x288 for a 420x240 block at zoom 1.2); element sizes are unzoomed.
@@ -130,7 +150,7 @@ export default class PhBoot extends View {
     const winW = pxW / z, winH = pxH / z;
     const W = Math.max(560, Math.min(1120, winW - 48));
     const pad = 36;
-    const nLines = Math.max(this.total ?? 6, this.lines.length);
+    const nLines = this.snap?.length ?? 6;
     const H = 96 + 18 + nLines * LINE_H + 14 + 40 + 46 + 12;
     const shown = this.lines.length;
     const filled = cellsFor(shown, nLines, CELLS);

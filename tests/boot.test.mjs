@@ -84,3 +84,36 @@ test("clip shortens with an ellipsis", () => {
   assert.equal(clip("abcdefg", 6), "abcde…");
   assert.equal(clip(null, 3), "");
 });
+
+test("runId: boot id + pid + starttime from /proc/self/stat, null when unreadable", async () => {
+  const { runId } = await import("../mods/ph-boot/bootlines.js");
+  const rest = Array.from({ length: 40 }, (_, i) => (i === 19 ? "24320745" : String(i)));
+  const stat = `205081 (herdr app) ${["S", ...rest.slice(1)].join(" ")}`;
+  assert.equal(runId(stat, "4f2a9c1e-77aa-4b1b-9a1c-5d3e2f1a0b9c\n"), "4f2a9c1e:205081:24320745");
+  assert.equal(runId(stat, null), "-:205081:24320745");
+  assert.equal(runId(null, "x"), null);
+  assert.equal(runId("garbage", "x"), null);
+});
+
+test("snapshotReady waits for spaces and terminals, up to the deadline", async () => {
+  const { snapshotReady } = await import("../mods/ph-boot/bootlines.js");
+  assert.equal(snapshotReady({ spaces: [], terminals: [] }, 0), false);
+  assert.equal(snapshotReady({ spaces: [{}], terminals: [] }, 100), false);
+  assert.equal(snapshotReady({ spaces: [{}], terminals: [{}] }, 0), true);
+  assert.equal(snapshotReady({ spaces: [], terminals: [] }, 400), true);
+});
+
+test("focusTarget: pane at open, then terminal, then focus now, then the shown tab's first terminal", async () => {
+  const { focusTarget } = await import("../mods/ph-boot/bootlines.js");
+  const spaces = [{ id: "s1", name: "work", active: true, tabs: [{ id: "a", name: "a", active: false }, { id: "mgr", name: "mgr", active: true }] }];
+  const ts = [{ address: "t1", labels: { "herdr.space": "work", "herdr.tab": "a" } },
+    { address: "t2", labels: { "herdr.space": "other", "herdr.tab": "mgr" } },
+    { address: "t3", labels: { "herdr.space": "work", "herdr.tab": "mgr" } }];
+  assert.deepEqual(focusTarget({ pane: "p1", terminal: "t9" }, null, spaces, ts), { pane: "p1" });
+  assert.deepEqual(focusTarget({ pane: null, terminal: "t9" }, null, spaces, ts), { terminal: "t9" });
+  assert.deepEqual(focusTarget({}, { pane: "p7" }, spaces, ts), { pane: "p7" });
+  assert.deepEqual(focusTarget({}, { space: "work", tab: "mgr", pane: null, terminal: null }, spaces, ts), { terminal: "t3" });
+  assert.deepEqual(focusTarget({}, null, spaces, [{ pane: "p3", tab: "mgr" }]), { pane: "p3" });
+  assert.equal(focusTarget({}, null, spaces, []), null);
+  assert.equal(focusTarget(null, null, null, null), null);
+});

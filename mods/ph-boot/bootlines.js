@@ -146,3 +146,47 @@ export function cellsFor(shown, n, cells = 40) {
   if (n <= 0) return cells;
   return Math.max(0, Math.min(cells, Math.round((cells * shown) / n)));
 }
+
+/** A per-process run id: "<boot_id>:<pid>:<starttime>" from /proc/sys/kernel/random/boot_id and
+ *  /proc/self/stat (field 22, clock ticks since boot). It changes with every app start and stays the same
+ *  for the whole run, whatever happens to mod copies or module versions. Null when unreadable (no /proc). */
+export function runId(stat, bootId) {
+  const s = String(stat ?? "");
+  const close = s.lastIndexOf(")");
+  const pid = Number.parseInt(s, 10);
+  if (close < 0 || !Number.isFinite(pid)) return null;
+  const f = s.slice(close + 2).trim().split(/\s+/); // f[0] is field 3 (state), so field 22 is f[19]
+  const start = f[19];
+  if (!start || !/^\d+$/.test(start)) return null;
+  return `${String(bootId ?? "").trim().slice(0, 8) || "-"}:${pid}:${start}`;
+}
+
+/** Cold start: the host's lists fill in during the first moments. The snapshot waits until it has
+ *  spaces and terminals, or until the deadline (then it takes what is there). */
+export function snapshotReady({ spaces, terminals } = {}, waitedMs = 0, deadlineMs = 400) {
+  return waitedMs >= deadlineMs || ((spaces?.length ?? 0) > 0 && (terminals?.length ?? 0) > 0);
+}
+
+/** Where pane.focus should send the keyboard when the overlay closes: the pane that had focus at open,
+ *  else the terminal block that had it, else whatever focus reports now, else the first terminal of the
+ *  shown tab (live terminals carry it in labels herdr.space/herdr.tab; fakes may carry `tab`/`pane`).
+ *  Null when there is nothing to focus. */
+export function focusTarget(was, now, spaces, terminals) {
+  if (was?.pane) return { pane: was.pane };
+  if (was?.terminal) return { terminal: was.terminal };
+  if (now?.pane) return { pane: now.pane };
+  if (now?.terminal) return { terminal: now.terminal };
+  const space = (spaces ?? []).find((s) => s?.active) ?? null;
+  const tab = space?.tabs?.find((t) => t?.active) ?? null;
+  const names = new Set([tab?.id, tab?.name, now?.tab].filter(Boolean));
+  const spaceNames = new Set([space?.id, space?.name, now?.space].filter(Boolean));
+  const inTab = (x) => {
+    const l = x?.labels ?? {};
+    if (x?.tab && names.has(x.tab)) return true;
+    return names.has(l["herdr.tab"]) && (!l["herdr.space"] || spaceNames.has(l["herdr.space"]));
+  };
+  const t = (terminals ?? []).find((x) => x && x.state !== "exited" && inTab(x)) ?? null;
+  if (t?.pane) return { pane: t.pane };
+  if (t?.address) return { terminal: t.address };
+  return null;
+}
