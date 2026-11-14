@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { P, STATES, stateOf, byUrgency, alpha, statusTag } from "../lib/palette.js";
 import { cutPoints, glowLayers } from "../lib/geom.js";
 import { Since, fmtDur, tabSeed, oldestBlocked } from "../lib/since.js";
-import { resolveIntensity, intensity, cursor, bars } from "../lib/motion.js";
+import { resolveIntensity, intensityCommand, intensity, cursor, bars } from "../lib/motion.js";
 import { state } from "./stubs/herdr.mjs";
 
 test("palette meanings", () => {
@@ -84,14 +84,32 @@ test("durations", () => {
 });
 
 test("intensity", () => {
-  assert.equal(resolveIntensity(undefined, undefined), "full");
-  assert.equal(resolveIntensity("calm", "full"), "calm");
-  assert.equal(resolveIntensity("bogus", "calm"), "calm");
+  assert.equal(resolveIntensity(undefined), "full");
+  assert.equal(resolveIntensity("calm"), "calm");
+  assert.equal(resolveIntensity("bogus"), "full");
   state.props = {}; state.shared = { "ph.intensity": "calm" };
   assert.equal(intensity(), "calm");
+  // A stale layout prop no longer counts: shared is the only source.
+  state.props = { intensity: "calm" }; state.shared = { "ph.intensity": "full" };
+  assert.equal(intensity(), "full");
+  state.props = {}; state.shared = { "ph.intensity": "calm" };
   const c = cursor(true);
   assert.ok(c.calls.some(([k]) => k === "child"), "calm cursor is solid");
   state.shared = {};
   assert.ok(cursor(true).calls.some(([k]) => k === "frames"), "full cursor blinks");
   assert.ok(!JSON.stringify(bars(3, "#fff", { on: true, calm: true }).calls).includes("loop"));
+});
+
+test("intensity commands", () => {
+  assert.equal(intensityCommand("calm", "full"), "calm");
+  assert.equal(intensityCommand("full", "calm"), "full");
+  assert.equal(intensityCommand("toggle", "full"), "calm");
+  assert.equal(intensityCommand("toggle", "calm"), "full");
+  assert.equal(intensityCommand("toggle", undefined), "calm");
+  assert.equal(intensityCommand("intensity", "calm"), "full");
+  assert.equal(intensityCommand("intensity:calm", "calm"), "calm");
+  assert.equal(intensityCommand("intensity.full", "calm"), "full");
+  assert.equal(intensityCommand("respond", "full"), null);
+  assert.equal(intensityCommand("focus", "full"), null);
+  assert.equal(intensityCommand(undefined, "full"), null);
 });

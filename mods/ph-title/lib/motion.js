@@ -1,21 +1,37 @@
 // Intensity (calm | full) and motion helpers. Rule: motion only when status says so; idle = still;
 // calm = no loops at all (solid cursor, static bars, no blink).
 import { div } from "gpui-kit";
-import { props, shared } from "herdr";
+import { shared } from "herdr";
 import { FONT_TERM } from "./palette.js";
 
-/** Pure: the layout prop wins (it is what intensity.sh writes), then shared, then "full". */
-export function resolveIntensity(propValue, sharedValue) {
-  for (const v of [propValue, sharedValue]) if (v === "calm" || v === "full") return v;
-  return "full";
+/** The one shared key that holds PHOSPHOR's intensity. ph-kit is its only writer (intensity.sh / keys reach it). */
+export const INTENSITY_KEY = "ph.intensity";
+
+/** Pure: "calm" | "full" from the shared value (anything else, including unset, is "full"). */
+export function resolveIntensity(sharedValue) {
+  return sharedValue === "calm" ? "calm" : "full";
 }
 
-/** "calm" | "full" for this mod copy: props().intensity, else shared("ph.intensity"), else "full". */
+/**
+ * Pure: the intensity a ph-kit command asks for, or null if it isn't an intensity command.
+ * "calm" | "full" | "toggle", also "intensity" (toggle) and "intensity:<calm|full|toggle>".
+ */
+export function intensityCommand(cmd, current) {
+  const c = typeof cmd === "string" ? cmd.replace(/^intensity[:.]?/, "") || "toggle" : "";
+  if (c === "calm" || c === "full") return c;
+  if (c === "toggle") return resolveIntensity(current) === "calm" ? "full" : "calm";
+  return null;
+}
+
+/**
+ * "calm" | "full": shared("ph.intensity"), else "full". Deliberately not a layout prop: a prop change
+ * would start every block over as a new copy (fresh localStorage, timers, history). A shared change
+ * only re-renders every mod, so render() must read this each time (never cache it in init).
+ */
 export function intensity() {
-  let p, s;
-  try { p = props()?.intensity; } catch { p = undefined; }
-  try { s = shared("ph.intensity"); } catch { s = undefined; }
-  return resolveIntensity(p, s);
+  let s;
+  try { s = shared(INTENSITY_KEY); } catch { s = undefined; }
+  return resolveIntensity(s);
 }
 export const isCalm = () => intensity() === "calm";
 

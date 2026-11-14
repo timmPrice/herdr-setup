@@ -9,7 +9,7 @@
 //          transition (350 ms), then sits still. Second line: “title” + where; third: pane/turn.
 //  - warn without an agent (failures, login): red plate, no hazard band. login body → Copy row.
 //  - info: plain panel, title + body.
-// Calm (shared ph.intensity = calm; toasts get no layout props): nothing moves. Hazard → solid band,
+// Calm (shared ph.intensity = calm): nothing moves. Hazard → solid band,
 // glow → 1 px core, no slide/type-in/fade; it just appears, then closes.
 //
 // Timeout: Herdr closes every toast overlay itself at `timeout` (about 5 s when missing or null;

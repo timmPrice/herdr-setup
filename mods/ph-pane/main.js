@@ -1,6 +1,6 @@
 // ph-pane: the PHOSPHOR pane header (one copy per pane; keep it cheap).
-// Layout: "header": { "content": { "mod": "ph-pane", "props": { "intensity": "full" } }, "height": 26 }
-// Props from the app: { pane, terminal } plus the layout's { intensity }.
+// Layout: "header": { "content": { "mod": "ph-pane" }, "height": 26 }
+// Props from the app: { pane, terminal }. Intensity: shared("ph.intensity") via lib/motion (read in render).
 //
 // Left → right: cut-corner status plate (tag + kanji), addr │ prog │ cwd │ git:branch (cwd elides
 // first), THINKING / NEEDS YOU label, time-in-state (VT323), 3-bar signal glyph, split/zoom/close.

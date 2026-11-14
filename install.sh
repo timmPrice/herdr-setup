@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs the PHOSPHOR layout into Herdr's home. Touches only:
 #   layouts/phosphor.*, themes/phosphor.json, backgrounds/phosphor-*, mods/ph-*
-# and adds one key to keys.json (ctrl-shift-u: jump to the oldest blocked agent) if that key is free.
+# and adds two keys to keys.json, each only if it is free: ctrl-shift-u (jump to the oldest blocked agent) and
+# ctrl-shift-i (toggle calm/full).
 # Runs ./check.sh first and refuses to install if it fails.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -33,7 +34,7 @@ copy() { # src dest-relative-to-home
   echo "installed $rel"
 }
 
-# Keep the intensity the person chose with ./intensity.sh (the repo's layout says "full").
+# Keep the intensity the person chose (shared ph.intensity; the repo's layout has the full look).
 keep=""
 [ -f "$HOME_DIR/layouts/phosphor.json" ] && keep=$(./intensity.sh 2>/dev/null || true)
 
@@ -53,26 +54,38 @@ if [ "$keep" = "calm" ]; then PH_LAYOUT="$tmp" ./intensity.sh calm >/dev/null; f
 mv -f "$tmp" "$HOME_DIR/layouts/phosphor.json"
 echo "installed layouts/phosphor.json${keep:+ (intensity: $keep)}"
 
-# One key: ctrl-shift-u jumps to the oldest blocked agent (ph-kit.respond) while phosphor is shown.
-# Added only if ctrl-shift-u isn't bound anywhere in keys.json; nothing else in the file changes.
+# Two keys while phosphor is shown: ctrl-shift-u jumps to the oldest blocked agent (ph-kit.respond),
+# ctrl-shift-i toggles calm/full (ph-kit.toggle). Each is added only if that key isn't bound anywhere in
+# keys.json; nothing else in the file changes.
 python3 -I - "$HOME_DIR/keys.json" <<'PY'
 import json, os, sys, tempfile
 path = sys.argv[1]
-KEY, ACTION, SECTION = "ctrl-shift-u", "ph-kit.respond", "layout:phosphor"
+SECTION = "layout:phosphor"
+WANT = [("ctrl-shift-u", "ph-kit.respond", "jump to the oldest blocked agent"),
+        ("ctrl-shift-i", "ph-kit.toggle", "toggle calm/full")]
 if not os.path.exists(path):
-    print(f"keys.json not found: to get {KEY}, add \"{SECTION}\": {{\"{KEY}\": \"{ACTION}\"}} to it")
+    for key, action, what in WANT:
+        print(f"keys.json not found: to {what}, add \"{SECTION}\": {{\"{key}\": \"{action}\"}} to it")
     sys.exit(0)
 with open(path) as f:
     keys = json.load(f)
-for sec, binds in keys.items():
-    if isinstance(binds, dict) and KEY in binds:
-        if sec == SECTION and binds[KEY] == ACTION:
-            print(f"keys.json: {KEY} already responds")
-        else:
-            print(f"keys.json: {KEY} is already bound in \"{sec}\" ({binds[KEY]!r}), left alone; "
-                  f"bind another key to \"{ACTION}\" in \"{SECTION}\" to jump to the oldest blocked agent")
-        sys.exit(0)
-keys.setdefault(SECTION, {})[KEY] = ACTION
+added = []
+for key, action, what in WANT:
+    taken = [(sec, binds[key]) for sec, binds in keys.items() if isinstance(binds, dict) and key in binds]
+    if (SECTION, action) in taken:
+        print(f"keys.json: {key} already does {action}")
+    elif taken:
+        sec, cur = taken[0]
+        print(f"keys.json: {key} is already bound in \"{sec}\" ({cur!r}), left alone; "
+              f"bind another key to \"{action}\" in \"{SECTION}\" to {what}")
+    elif any(isinstance(b, dict) and action in b.values() for b in keys.values()):
+        print(f"keys.json: {action} already has a key, left alone")
+    else:
+        keys.setdefault(SECTION, {})[key] = action
+        added.append((key, action))
+if not added:
+    sys.exit(0)
+
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.abspath(path)), prefix=".keys.", suffix=".tmp")
 try:
     with os.fdopen(fd, "w") as f:
@@ -82,7 +95,8 @@ try:
 except BaseException:
     os.unlink(tmp)
     raise
-print(f"keys.json: added \"{SECTION}\": {{\"{KEY}\": \"{ACTION}\"}}")
+for key, action in added:
+    print(f"keys.json: added \"{SECTION}\": {{\"{key}\": \"{action}\"}}")
 PY
 if [ -f "$HOME_DIR/keys.json" ]; then
   sleep 1
