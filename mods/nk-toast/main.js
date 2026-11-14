@@ -14,7 +14,7 @@
 
 import { View, div, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { props, closeOverlay, run, shared } from "herdr";
+import { props, closeOverlay, run, shared, settings } from "herdr";
 
 const P = {
   bg: "#1d2021", hover: "#282828", fg: "#ebdbb2", muted: "#a89984",
@@ -26,7 +26,8 @@ const KIND = {
   info: { seal: "mods/nk-toast/seal-info-v3.svg", tint: P.aqua },   // 通知
 };
 const DEFAULT_TIMEOUT = 6000;
-const SEAL_W = 42, SEAL_H = 58; // px, final seal size (art is 72x100)
+const SEAL_MAX_H = 58, SEAL_MIN_H = 30, SEAL_RATIO = 0.72; // px; art is 72x100
+const SEAL_PAD = 9;             // px kept free above and below the seal
 const STAMP_FROM = 1.3;         // the seal starts this much bigger
 const SLAM_MS = 180;
 const FADE_MS = 400;
@@ -62,6 +63,9 @@ export default class NkToast extends View {
   }
 
   seal(kind) {
+    // fit the toast's height (Herdr sizes the overlay; it is about 60-80 px)
+    const SEAL_H = Math.max(SEAL_MIN_H, Math.min(SEAL_MAX_H, Math.round((this.h ?? 76) - 2 * SEAL_PAD)));
+    const SEAL_W = Math.round(SEAL_H * SEAL_RATIO);
     const big = this.stage === 0;
     const k = big ? STAMP_FROM : 1;
     const w = Math.round(SEAL_W * k), h = Math.round(SEAL_H * k);
@@ -85,6 +89,10 @@ export default class NkToast extends View {
     let card = h_flex()
       .id("nk-toast")
       .size_full()
+      .on_size_change((size, cx) => {
+        const h = Math.round(size.height / (settings()?.zoom || 1)); // design px, like .h()
+        if (h !== this.h) { this.h = h; cx.notify(); }
+      })
       .px(14)
       .gap(14)
       .items_center()
