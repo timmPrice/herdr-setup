@@ -23,7 +23,7 @@ export const P = {
 // Font family names (fc-scan family, not file names). Files live in mods/ph-kit/fonts/.
 export const FONT_UI = "Share Tech Mono";   // chrome labels (layout ui_font)
 export const FONT_NUM = "VT323";            // numeric readouts; renders small, use ~1.4x px
-export const FONT_MARK = "Orbitron";        // wordmark only; use .font_weight(900) (variable font, Black)
+export const FONT_MARK = "PH Wordmark";     // wordmark only: Orbitron Black, ASCII subset, renamed (OFL Reserved Font Name)
 export const FONT_JP = "Kosugi Maru";       // kanji accents (subset: see README)
 export const FONT_TERM = "JetBrains Mono";  // terminals + glyphs Share Tech lacks: ↑↓▲■█ and status tags
 

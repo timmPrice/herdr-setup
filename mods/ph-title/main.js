@@ -25,10 +25,11 @@ export default class PhTitle extends View {
       .on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run(cmd); }).child(label);
     return h_flex().id("ph-title").size_full().items_center().bg(P.void).border_b(1).border_color(P.line).font_family(FONT_UI).text_size(13)
       .child(h_flex().h_full().px(10).gap(6).items_center().bg(P.amber).text_color(P.void)
-        .child(div().font_family(FONT_MARK).font_weight(900).text_size(14).child("HERDR/OS"))
+        .child(div().font_family(FONT_MARK).text_size(14).child("HERDR/OS"))
         .child(div().font_family(FONT_JP).text_size(12).child("端末")))
       .child(div().flex_1())
-      .when(Boolean(w?.buttons), (el) => el
+      // Linux: window().buttons can be false (some WMs) yet titlebar:none leaves no buttons at all, so draw them.
+      .when(Boolean(w?.buttons || w?.platform === "linux"), (el) => el
         .child(btn("ph-min", "_", "window.minimize"))
         .child(btn("ph-max", w.maximized ? "▫" : "□", "window.maximize"))
         .child(btn("ph-close", "×", "window.close")));

@@ -28,7 +28,7 @@ export default class PhTabs extends View {
       .children((space?.tabs ?? []).map((t) => h_flex().id(`ph-tab-${t.id}`).h(20).px(8).items_center()
         .bg(t.active ? P.amber : P.panel).text_color(t.active ? P.void : P.dim2)
         .on_mouse_down("left", stop).on_click(() => run("tab.select", { id: t.id }))
-        .child(`${String(t.index + 1).padStart(2, "0")}:${t.named ? t.name : "tab"}`)))
+        .child(`${String(t.index).padStart(2, "0")}:${t.named ? t.name : "tab"}`)))
       .child(div().id("ph-tab-new").px(8).text_color(P.dim2).on_mouse_down("left", stop)
         .on_click(() => openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 })).child("+"))
       .child(div().flex_1())

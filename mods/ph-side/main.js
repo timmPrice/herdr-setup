@@ -13,7 +13,7 @@ export default class PhSide extends View {
       .child(head("01 // NODES 節点"))
       .children(spaces().map((s) => div().id(`ph-node-${s.id}`).px(10).py(2)
         .text_color(s.active ? P.amber : P.dim2).on_click(() => run("space.select", { id: s.id }))
-        .child(`${String(s.index + 1).padStart(2, "0")} ${s.name}`)))
+        .child(`${String(s.index).padStart(2, "0")} ${s.name}`)))
       .child(head("02 // DAEMONS 常駐"))
       .children(list.map((a) => {
         const st = stateOf(a.status);
