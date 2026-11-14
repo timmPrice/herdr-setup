@@ -21,13 +21,13 @@ const P = {
   pink: "#d3869b", aqua: "#8ec07c", orange: "#fe8019", red: "#fb4934",
 };
 const KIND = {
-  done: { seal: "mods/nk-toast/seal-done.svg", tint: P.pink },   // 完了
-  warn: { seal: "mods/nk-toast/seal-warn.svg", tint: P.orange }, // 警告
-  info: { seal: "mods/nk-toast/seal-info.svg", tint: P.aqua },   // 通知
+  done: { seal: "mods/nk-toast/seal-done-v3.svg", tint: P.pink },   // 完了
+  warn: { seal: "mods/nk-toast/seal-warn-v3.svg", tint: P.orange }, // 警告
+  info: { seal: "mods/nk-toast/seal-info-v3.svg", tint: P.aqua },   // 通知
 };
 const DEFAULT_TIMEOUT = 6000;
-const SEAL = 44;        // px, final seal size
-const STAMP_FROM = 1.5; // the seal starts this much bigger
+const SEAL_W = 42, SEAL_H = 58; // px, final seal size (art is 72x100)
+const STAMP_FROM = 1.3;         // the seal starts this much bigger
 const SLAM_MS = 180;
 const FADE_MS = 400;
 
@@ -63,16 +63,18 @@ export default class NkToast extends View {
 
   seal(kind) {
     const big = this.stage === 0;
-    const size = big ? Math.round(SEAL * STAMP_FROM) : SEAL;
-    const off = big ? -Math.round((size - SEAL) / 2) : 0;
-    let el = image(KIND[kind].seal).absolute().w(size).h(size).left(off).top(off).opacity(big ? 0 : 1);
+    const k = big ? STAMP_FROM : 1;
+    const w = Math.round(SEAL_W * k), h = Math.round(SEAL_H * k);
+    // grow around the centre: left/top shift by half the extra size
+    let el = image(KIND[kind].seal).absolute().w(w).h(h)
+      .left(-Math.round((w - SEAL_W) / 2)).top(-Math.round((h - SEAL_H) / 2)).opacity(big ? 0 : 1);
     if (!this.calm) {
       // ease-in: it accelerates into the paper, like a stamp
       const slam = { duration: SLAM_MS, easing: "ease-in" };
       el = el.transition("width", slam).transition("height", slam).transition("left", slam)
         .transition("top", slam).transition("opacity", { duration: 120, easing: "ease-out" });
     }
-    return div().id("nk-toast-seal-slot").relative().flex_none().w(SEAL).h(SEAL).child(el.id("nk-toast-seal"));
+    return div().id("nk-toast-seal-slot").relative().flex_none().w(SEAL_W).h(SEAL_H).child(el.id("nk-toast-seal"));
   }
 
   render(cx) {

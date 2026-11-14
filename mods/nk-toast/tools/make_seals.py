@@ -10,15 +10,16 @@ from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 
+VERSION = 3  # bump when the art changes: Herdr caches images by path
 SEALS = {"done": "完了", "warn": "警告", "info": "通知"}
 RED, CREAM = "#fb4934", "#fbf1c7"
-V = 100  # viewBox size
+W, V = 72, 100  # viewBox: a tall seal, two kanji stacked
 
 def ink_edge(seed):
     rnd = random.Random(seed)
-    m, r, pts = 3.0, 14.0, []
+    m, r, pts = 2.5, 11.0, []
     # rounded square traced by angle; corner arcs + straight edges, radius jittered
-    corners = [(V - m - r, V - m - r), (m + r, V - m - r), (m + r, m + r), (V - m - r, m + r)]
+    corners = [(W - m - r, V - m - r), (m + r, V - m - r), (m + r, m + r), (W - m - r, m + r)]
     for ci, (cx, cy) in enumerate(corners):
         a0 = ci * math.pi / 2
         for k in range(7):
@@ -41,9 +42,9 @@ def specks(seed):
     out = []
     for _ in range(5):
         side = rnd.randrange(4)
-        t = rnd.uniform(18, 82)
-        d = rnd.uniform(4.5, 8)
-        x, y = [(t, d), (V - d, t), (t, V - d), (d, t)][side]
+        d = rnd.uniform(4.5, 7)
+        tx, ty = rnd.uniform(16, W - 16), rnd.uniform(16, V - 16)
+        x, y = [(tx, d), (W - d, ty), (tx, V - d), (d, ty)][side]
         out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rnd.uniform(0.6, 1.4):.1f}" fill="{CREAM}" opacity="{rnd.uniform(.5, .9):.2f}"/>')
     return "".join(out)
 
@@ -63,14 +64,14 @@ def main(ttf, out):
     font = TTFont(ttf)
     for i, (name, text) in enumerate(SEALS.items()):
         # two characters stacked vertically (tategaki), each stretched to fill its half
-        p1 = glyph_path(font, text[0], 17, 10, 66, 42)
-        p2 = glyph_path(font, text[1], 17, 49, 66, 42)
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {V} {V}" width="{V}" height="{V}">'
+        p1 = glyph_path(font, text[0], 9, 8, 54, 44)
+        p2 = glyph_path(font, text[1], 9, 49, 54, 44)
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {V}" width="{W}" height="{V}">'
                f'<path d="{ink_edge(i + 3)}" fill="{RED}"/>'
-               f'<path d="{p1} {p2}" fill="{CREAM}"/>{specks(i + 3)}</svg>\n')
-        with open(f"{out}/seal-{name}.svg", "w") as f:
+               f'<path d="{p1} {p2}" fill="{CREAM}" stroke="{CREAM}" stroke-width="0.7" stroke-linejoin="round"/>{specks(i + 3)}</svg>\n')
+        with open(f"{out}/seal-{name}-v{VERSION}.svg", "w") as f:
             f.write(svg)
-        print(f"{out}/seal-{name}.svg", len(svg))
+        print(f"{out}/seal-{name}-v{VERSION}.svg", len(svg))
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
