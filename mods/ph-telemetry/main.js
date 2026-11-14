@@ -2,16 +2,19 @@
 //   03 // EVENTS 記録     status changes observed from agents() (only when the block is tall enough)
 //   03|04 // TELEMETRY 計測  per-state counters, 60-min working histogram, host CPU/MEM/LOAD/NET/uptime from /proc
 // Nothing animates: values change in place. Calm and full look the same (there is no motion to drop).
-// /proc is read on a 5 s timer, never in render; the read is skipped while the block is hidden.
+// /proc is read on the shared aligned minute tick (lib/tick.js), and every 5 s only while some agent is
+// RUN and the block is shown; never in render, never while hidden. Host figures (load, CPU, NET) move on
+// almost every read even on an idle box, so an idle window gets one coalesced redraw a minute, no more.
 // A tick only notifies (= redraws the whole window) when something it shows actually changed.
 import { View, div, PathBuilder } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, spaces, terminals, layout, settings, readTextFile, exec } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, STATES, KANJI, alpha } from "./lib/palette.js";
+import { everyMinute } from "./lib/tick.js";
 import { plate, outline } from "./lib/plate.js";
-import { Hist, Events, Host, clock, hostFields, splitDump } from "./model.js";
+import { Hist, Events, Host, clock, hostFields, splitDump, wantFast } from "./model.js";
 
-const TICK = 5000;
+const FAST = 5000; // ms between reads while some agent is working (RUN)
 const PROC = { stat: "/proc/stat", meminfo: "/proc/meminfo", netdev: "/proc/net/dev", loadavg: "/proc/loadavg", uptime: "/proc/uptime" };
 const PAD = 10;
 // Telemetry section height, summed from the fixed heights below (header 8+22, counters 8+48,
@@ -43,8 +46,26 @@ export default class PhTelemetry extends View {
     this.useExec = false;
     this.busy = false;
     this.drawnKey = null; // viewKey() of the last render
+    this.fast = false;    // 5 s chain running
     this.refresh(cx);
-    cx.timer.every(TICK, (cx) => this.refresh(cx));
+    everyMinute(cx, (cx) => { this.refresh(cx); this.startFast(cx); });
+  }
+
+  /** The 5 s cadence is wanted only while an agent is working and the block is shown. */
+  fastWanted(list = agents()) {
+    return wantFast(list, this.shown());
+  }
+
+  /** Starts the 5 s chain if wanted and not running; it ends itself once no agent is working. */
+  startFast(cx, list) {
+    if (this.fast || !cx?.timer || !this.fastWanted(list)) return;
+    this.fast = true;
+    const go = (cx) => {
+      if (!this.fastWanted()) { this.fast = false; return; }
+      this.refresh(cx);
+      cx.timer.after(FAST, go);
+    };
+    cx.timer.after(FAST, go);
   }
 
   shown() {
@@ -105,6 +126,7 @@ export default class PhTelemetry extends View {
     const now = Date.now();
     this.observe(list, now);
     this.drawnKey = this.viewKey(list, now);
+    this.startFast(cx, list); // an agent just started working: read the host every 5 s until none is
 
     // on_size_change reports zoomed px (504x288 for a 420x240 block at zoom 1.2, seen live); layout px are unzoomed.
     let z = 1;

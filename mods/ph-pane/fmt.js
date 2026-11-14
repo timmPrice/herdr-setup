@@ -30,11 +30,6 @@ export function fmtMin(ms) {
   return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
 }
 
-/** ms until just past the next wall-clock minute (all copies re-render in the same frame). */
-export function msToNextMinute(now) {
-  return 60000 - (now % 60000) + 5;
-}
-
 /**
  * What may move / tick in one header copy. `active` = this pane is focused in the tab on screen.
  * Hidden tabs and unfocused panes run nothing (no timer, no loops); idle/done/shell never tick.

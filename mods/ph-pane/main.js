@@ -19,10 +19,11 @@ import { View, div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { panes, agents, spaces, props, run, home, layout, keys, focused as focusInfo } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, stateOf, alpha } from "./lib/palette.js";
+import { everyMinute } from "./lib/tick.js";
 import { plate, outline, hazard, glowRule } from "./lib/plate.js";
 import { intensity, blink } from "./lib/motion.js";
 import { Since, tabSeed } from "./lib/since.js";
-import { paneFrame, fmtMin, msToNextMinute, motionPlan, pickRespondKey } from "./fmt.js";
+import { paneFrame, fmtMin, motionPlan, pickRespondKey } from "./fmt.js";
 
 const ICONS = "mods/ph-pane/icons";
 const PLATE_W = 84;
@@ -78,10 +79,9 @@ export default class PhPane extends View {
   }
 
   tick(cx, gen) {
-    cx.timer.after(msToNextMinute(Date.now()), (cx) => {
-      if (gen !== this.gen) return;
+    everyMinute(cx, (cx) => {
+      if (gen !== this.gen) return false;
       cx.notify();
-      this.tick(cx, gen);
     });
   }
 

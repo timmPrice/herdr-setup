@@ -37,11 +37,6 @@ export function clock(d) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/** ms until the next whole minute (at least 1 s, so a timer never fires twice in one minute). */
-export function msToNextMinute(d) {
-  return Math.max(1000, 60000 - (d.getSeconds() * 1000 + d.getMilliseconds()) + 50);
-}
-
 /** The git suffix for the status line: "↑2 ↓1 +3" (empty parts dropped). */
 export function gitSuffix(g) {
   if (!g) return "";

@@ -16,9 +16,10 @@ import { View, div } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { agents, panes, focused, spaces, run, exec, home, keys } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_TERM, STATES } from "./lib/palette.js";
+import { everyMinute } from "./lib/tick.js";
 import { intensity } from "./lib/motion.js";
 import { plate } from "./lib/plate.js";
-import { parseGitStatus, shortPath, counts, clock, msToNextMinute, gitSuffix, gitKeyOf, needGit, keyFor } from "./status.js";
+import { parseGitStatus, shortPath, counts, clock, gitSuffix, gitKeyOf, needGit, keyFor } from "./status.js";
 
 const H = 22;
 const KEY_PALETTE = "ctrl-shift-p";   // fallback; keys.json global → app.palette
@@ -32,11 +33,8 @@ export default class PhStatus extends View {
     this.st = { key: null, at: 0, busy: false, errKey: null }; // see needGit
     this.queued = false;  // a 0 ms timer to start a read is pending
     try { this.home = home(); } catch { this.home = null; }
-    // clock: once on the next minute, then every minute
-    cx.timer.after(msToNextMinute(this.now), (cx) => {
-      this.now = new Date(); cx.notify();
-      cx.timer.every(60000, (cx) => { this.now = new Date(); cx.notify(); });
-    });
+    // clock: on the shared aligned minute tick (lib/tick.js), re-aligned every minute
+    everyMinute(cx, (cx) => { this.now = new Date(); cx.notify(); });
   }
 
   // where the keyboard is: { addr, prog, cwd, branch, machine }

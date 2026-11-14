@@ -15,11 +15,12 @@ import {
   spaces, agents, terminals, panes, run, setAgentOrder, exec, settings, layout, openOverlay, window as appWindow,
 } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, KANJI, stateOf, alpha } from "./lib/palette.js";
+import { everyMinute } from "./lib/tick.js";
 import { plate, outline, hazard } from "./lib/plate.js";
 import { isCalm, blink, cursor, bars } from "./lib/motion.js";
 import { tabSeed } from "./lib/since.js";
 import {
-  isCompact, pad2, fmtMin, toNextMinute, Clock, progName, barLevel, pipsBySpace, fitPips, homeNode, gitBits,
+  isCompact, pad2, fmtMin, Clock, progName, barLevel, pipsBySpace, fitPips, homeNode, gitBits,
   kidStatus, treeText, kidName, daemonList, timed, minuteKey, place, nestSpaces, findNode,
 } from "./model.js";
 
@@ -55,12 +56,12 @@ export default class PhSide extends View {
   }
 
   // Once a minute, on the minute: redraw only if a readout changed; look at git while the window is in front.
+  // Shared aligned tick (lib/tick.js): lands in the same frame as the other mods' minute notifies.
   tick(cx) {
-    cx.timer.after(toNextMinute(Date.now()) + 50, (cx) => {
+    everyMinute(cx, (cx) => {
       const now = Date.now();
       if (this.readoutKey(now) !== this.shownKey) cx.notify();
       if (now - this.gitAt >= GIT_EVERY - 1000) this.refreshGit(cx);
-      this.tick(cx);
     });
   }
 

@@ -20,8 +20,6 @@ export function fmtMin(ms) {
   return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
 }
 
-/** ms from `now` to the next whole minute (never 0: a timer at a boundary waits a full minute). */
-export const toNextMinute = (now) => MIN - (now % MIN) || MIN;
 
 /** Done and idle count as one for timing: looking at a finished agent turns done into idle. */
 export const timingStatus = (s) => (s === "done" ? "idle" : s ?? null);

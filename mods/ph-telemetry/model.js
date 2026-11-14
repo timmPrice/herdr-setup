@@ -273,3 +273,8 @@ export function splitDump(out) {
   }
   return res;
 }
+
+/** Read the host every 5 s only while the block is shown and some agent is working (RUN); else once a minute. */
+export function wantFast(list, shown) {
+  return Boolean(shown) && (list ?? []).some((a) => a?.status === "working");
+}

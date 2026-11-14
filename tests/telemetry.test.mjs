@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Hist, Events, Host, MIN, parseStat, parseMem, parseNet, parseLoad, parseUptime, fmtBytes, fmtRate, fmtMem, fmtUptime, splitDump, progOf, hostFields, cells } from "../mods/ph-telemetry/model.js";
+import { Hist, Events, Host, MIN, parseStat, parseMem, parseNet, parseLoad, parseUptime, fmtBytes, fmtRate, fmtMem, fmtUptime, splitDump, progOf, hostFields, cells, wantFast } from "../mods/ph-telemetry/model.js";
 
 const T0 = 1000 * MIN; // minute-aligned epoch
 
@@ -181,4 +181,12 @@ test("formatters", () => {
   assert.equal(fmtUptime(3 * 86400 + 7 * 3600 + 12 * 60 + 5), "3d 07:12");
   assert.equal(fmtUptime(59), "00:00");
   assert.deepEqual(splitDump("@@/proc/a\nx\ny\n@@/proc/b\nz"), { "/proc/a": "x\ny\n", "/proc/b": "z\n" });
+});
+
+test("host cadence: 5 s only while shown and some agent is RUN", () => {
+  assert.equal(wantFast([{ status: "idle" }, { status: "done" }, { status: "blocked" }], true), false);
+  assert.equal(wantFast([], true), false);
+  assert.equal(wantFast(undefined, true), false);
+  assert.equal(wantFast([{ status: "idle" }, { status: "working" }], true), true);
+  assert.equal(wantFast([{ status: "working" }], false), false);
 });

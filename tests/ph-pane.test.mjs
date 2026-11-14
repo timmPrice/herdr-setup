@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { paneFrame, fmtMin, msToNextMinute, motionPlan, pickRespondKey, RESPOND_FALLBACK } from "../mods/ph-pane/fmt.js";
+import { paneFrame, fmtMin, motionPlan, pickRespondKey, RESPOND_FALLBACK } from "../mods/ph-pane/fmt.js";
 
 test("ph-pane time-in-state at minute resolution", () => {
   assert.equal(fmtMin(0), "<1m");
@@ -15,17 +15,6 @@ test("ph-pane time-in-state at minute resolution", () => {
   assert.equal(fmtMin(undefined), "<1m");
   assert.equal(fmtMin(NaN), "<1m");
   for (const ms of [0, 61_000, 3_852_000, 51 * 3_600_000 + 1234]) assert.doesNotMatch(fmtMin(ms), /:|s$/);
-});
-
-test("ph-pane timer aligns to the next wall-clock minute", () => {
-  assert.equal(msToNextMinute(0), 60_005);
-  assert.equal(msToNextMinute(59_000), 1_005);
-  assert.equal(msToNextMinute(12 * 60_000 + 30_000), 30_005);
-  for (const now of [1, 17_123, 1_700_000_000_123]) {
-    const at = now + msToNextMinute(now);
-    assert.equal(at % 60_000, 5);
-    assert.ok(msToNextMinute(now) <= 60_005);
-  }
 });
 
 test("ph-pane motion: only the focused pane of the shown tab ticks or moves", () => {

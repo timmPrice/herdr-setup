@@ -8,6 +8,7 @@ import { View, div } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { run, window as win, openOverlay, agents, spaces, keys, machines, updates, layout, settings } from "herdr";
 import { P, FONT_MARK, FONT_JP, FONT_UI, FONT_NUM, FONT_TERM, STATES, alpha } from "./lib/palette.js";
+import { everyMinute } from "./lib/tick.js";
 import { isCalm, blink } from "./lib/motion.js";
 import { plate, outline, hazard } from "./lib/plate.js";
 import { Since, tabSeed, oldestBlocked } from "./lib/since.js";
@@ -25,14 +26,10 @@ export default class PhTitle extends View {
     }
     // Same tracker as ph-kit.respond, so the strip names the agent the click/key will focus.
     this.since = new Since();
-    // Clock: HH:MM in every intensity (idle = still), one redraw a minute via chained after() calls
-    // aligned to the minute boundary. render() reads the time itself, so any redraw (e.g. a calm/full
-    // switch) shows the current minute and nothing goes stale.
-    const tick = (cx) => {
-      cx.notify();
-      cx.timer.after(untilNextMinute(), tick);
-    };
-    cx.timer.after(untilNextMinute(), tick);
+    // Clock: HH:MM in every intensity (idle = still), one redraw a minute on the shared aligned tick
+    // (lib/tick.js, same frame as the other mods). render() reads the time itself, so any redraw
+    // (e.g. a calm/full switch) shows the current minute and nothing goes stale.
+    everyMinute(cx, (cx) => cx.notify());
   }
 
   respond(target) {
@@ -138,5 +135,3 @@ export default class PhTitle extends View {
   }
 }
 
-/** ms until just past the next minute boundary. */
-function untilNextMinute(ms = Date.now()) { return 60000 - (ms % 60000) + 5; }

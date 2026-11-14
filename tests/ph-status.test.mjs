@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseGitStatus, shortPath, counts, clock, msToNextMinute, gitSuffix, gitKeyOf, needGit, keyFor, GIT_STALE_LOCAL_MS, GIT_STALE_REMOTE_MS } from "../mods/ph-status/status.js";
+import { parseGitStatus, shortPath, counts, clock, gitSuffix, gitKeyOf, needGit, keyFor, GIT_STALE_LOCAL_MS, GIT_STALE_REMOTE_MS } from "../mods/ph-status/status.js";
 
 test("git porcelain v2", () => {
   const out = [
@@ -31,9 +31,6 @@ test("counts and clock", () => {
     { blocked: 1, done: 0, working: 2, idle: 0 });
   assert.deepEqual(counts(undefined), { blocked: 0, done: 0, working: 0, idle: 0 });
   assert.equal(clock(new Date(2026, 10, 14, 7, 5, 59)), "07:05");
-  const ms = msToNextMinute(new Date(2026, 10, 14, 7, 5, 30, 0));
-  assert.ok(ms > 30000 && ms < 30200);
-  assert.ok(msToNextMinute(new Date(2026, 10, 14, 7, 5, 59, 999)) >= 1000);
 });
 
 test("git read policy", () => {

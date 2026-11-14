@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  isCompact, pad2, fmtMin, toNextMinute, Clock, timingStatus, progName, barLevel, pipsBySpace, fitPips, homeNode,
+  isCompact, pad2, fmtMin, Clock, timingStatus, progName, barLevel, pipsBySpace, fitPips, homeNode,
   gitBits, kidStatus, subTree, treeText, daemonList, timed, minuteKey, place, nestSpaces, findNode,
 } from "../mods/ph-side/model.js";
 
@@ -27,8 +27,6 @@ test("minute format", () => {
   assert.equal(fmtMin(H + 4 * M), "1h04m");
   assert.equal(fmtMin(23 * H + 59 * M), "23h59m");
   assert.equal(fmtMin(2 * D + 3 * H + 30 * M), "2d03h");
-  assert.equal(toNextMinute(10 * M), M);
-  assert.equal(toNextMinute(10 * M + 15_000), 45_000);
 });
 
 test("clock survives a restart (empty first render)", () => {
