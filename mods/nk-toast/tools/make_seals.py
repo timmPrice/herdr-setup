@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Builds the hanko seal SVGs (seal-*.svg) from DotGothic16 glyph outlines.
+"""Builds the hanko seal SVGs (seal-*.svg) from Kosugi Maru glyph outlines.
 
-Usage: python3 -I make_seals.py <DotGothic16-Regular.ttf> <out dir>
+Usage: python3 -I make_seals.py <KosugiMaru .ttf> <out dir>
+  e.g. python3 -I mods/nk-toast/tools/make_seals.py mods/nk-pane/fonts/KosugiMaru-nk.ttf mods/nk-toast
+(the nk-pane subset has 完了警告通知). The em box (hhea ascent+descent) is stretched onto each half.
 Herdr's SVG renderer may not see app fonts, so the kanji are baked in as paths.
 The ink edge is a deterministic jittered rounded square plus a few paper specks.
 """
@@ -10,7 +12,7 @@ from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 
-VERSION = 3  # bump when the art changes: Herdr caches images by path
+VERSION = 4  # bump when the art changes: Herdr caches images by path
 SEALS = {"done": "完了", "warn": "警告", "info": "通知"}
 RED, CREAM = "#fb4934", "#fbf1c7"
 W, V = 72, 100  # viewBox: a tall seal, two kanji stacked

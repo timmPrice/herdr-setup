@@ -3,7 +3,7 @@
 //
 // A dark gruvbox card with a red hanko seal on the left: 完了 (done / agent finished),
 // 警告 (warning, error, needs-you), 通知 (anything else). The seal SVGs are built from
-// DotGothic16 outlines by tools/make_seals.py (kanji baked in as paths, OFL.txt alongside).
+// Kosugi Maru outlines by tools/make_seals.py (kanji baked in as paths, LICENSE.txt + NOTICE.txt alongside).
 //
 // Intensity: the root "toast" can't take props, so it is read from shared("nk.intensity")
 // ("calm" | "full", default "full"); props().intensity wins if Herdr ever passes one.
@@ -26,9 +26,9 @@ const P = {
   pink: "#d3869b", aqua: "#8ec07c", orange: "#fe8019", red: "#fb4934",
 };
 const KIND = {
-  done: { seal: "mods/nk-toast/seal-done-v3.svg", tint: P.pink },   // 完了
-  warn: { seal: "mods/nk-toast/seal-warn-v3.svg", tint: P.orange }, // 警告
-  info: { seal: "mods/nk-toast/seal-info-v3.svg", tint: P.aqua },   // 通知
+  done: { seal: "mods/nk-toast/seal-done-v4.svg", tint: P.pink },   // 完了
+  warn: { seal: "mods/nk-toast/seal-warn-v4.svg", tint: P.orange }, // 警告
+  info: { seal: "mods/nk-toast/seal-info-v4.svg", tint: P.aqua },   // 通知
 };
 const DEFAULT_TIMEOUT = 5000; // Herdr's own default (measured ~5 s)
 const EARLY_MS = 60;          // close this much before Herdr would
