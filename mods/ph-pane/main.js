@@ -20,30 +20,13 @@ import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, stateOf, alpha } from "./lib/
 import { plate, outline, hazard, glowRule } from "./lib/plate.js";
 import { intensity, blink, bars } from "./lib/motion.js";
 import { Since, tabSeed } from "./lib/since.js";
+import { paneFrame, fmtLive, fmtCoarse, pickRespondKey } from "./fmt.js";
 
 const ICONS = "mods/ph-pane/icons";
 const PLATE_W = 84;
 const PLATE_H = 20;
 const RULE_W = 6000; // wider than any pane; the header clips it
 const RULE_H = 6;
-const RESPOND_ACTION = "ph-kit.respond";
-const RESPOND_FALLBACK = "ctrl-shift-u";
-
-// Match the first visible tab frame, including the active child of a stack (from mods/pane).
-function paneFrame(node) {
-  if (!node || node.hidden) return null;
-  if (node.content?.tab && node.content.pane) return node.content.pane;
-  let children = node.children ?? [];
-  if (node.type === "stack") {
-    const visible = children.filter((child) => !child.hidden);
-    children = [visible.find((child) => child.id === node.active) ?? visible[0]];
-  }
-  for (const child of children) {
-    const frame = paneFrame(child);
-    if (frame) return frame;
-  }
-  return null;
-}
 
 function folder(cwd) {
   if (!cwd) return "";
@@ -51,34 +34,9 @@ function folder(cwd) {
   return cwd === h ? "~" : h && cwd.startsWith(h + "/") ? "~" + cwd.slice(h.length) : cwd;
 }
 
-const pad2 = (n) => String(n).padStart(2, "0");
-
-/** Live readout: 04:12 · 1h04:12 · 2d03h. */
-export function fmtLive(ms) {
-  const s = Math.max(0, Math.floor((ms ?? 0) / 1000));
-  const m = Math.floor(s / 60), h = Math.floor(m / 60);
-  if (h === 0) return `${pad2(m)}:${pad2(s % 60)}`;
-  if (h < 24) return `${h}h${pad2(m % 60)}:${pad2(s % 60)}`;
-  return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
-}
-
-/** Coarse readout (minute resolution, so it doesn't tick): 27m · 1h04m · 2d03h. */
-export function fmtCoarse(ms) {
-  const m = Math.floor(Math.max(0, ms ?? 0) / 60000), h = Math.floor(m / 60);
-  if (h === 0) return `${pad2(m)}m`;
-  if (h < 24) return `${h}h${pad2(m % 60)}m`;
-  return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
-}
-
-/** The key bound to ph-kit.respond, layout section first ("ctrl-shift-u" if none / unreadable). */
+/** The key bound to ph-kit.respond (see pickRespondKey). */
 function respondKey() {
-  try {
-    const all = keys().filter((k) => k.action === RESPOND_ACTION);
-    const pick = all.find((k) => k.section === "layout:phosphor") ?? all.find((k) => k.section === "global") ?? all[0];
-    return pick?.keys || RESPOND_FALLBACK;
-  } catch {
-    return RESPOND_FALLBACK;
-  }
+  try { return pickRespondKey(keys()); } catch { return pickRespondKey([]); }
 }
 
 const sep = () => div().flex_none().text_color(P.grey).child("│");
@@ -136,10 +94,16 @@ export default class PhPane extends View {
 
     let box = div().id(`ph-plate-${pane}`).relative().flex_none().w(PLATE_W).h(PLATE_H);
     if (st.key === "blocked") {
-      box = box
-        .child(hazard(PLATE_W, PLATE_H, st.color, { calm, cut: 7, corners: "br", stripe: 4, interval: 9 }))
-        .child(label.text_color(calm ? P.void : P.fg));
-      return blink(box, true, { calm, from: 0.45 });
+      // Solid red plate, dark hazard stripes on top that blink (full) / none (calm). The label never
+      // fades: dark bold text on red stays readable mid-blink and in calm.
+      const shape = { cut: 7, corners: "br" };
+      box = box.child(plate(PLATE_W, PLATE_H, st.color, shape));
+      if (!calm) {
+        const stripes = div().id(`ph-haz-${pane}`).absolute().left(0).top(0).w(PLATE_W).h(PLATE_H)
+          .child(hazard(PLATE_W, PLATE_H, alpha(P.void, 0.42), { ...shape, stripe: 4, interval: 9, base: alpha(P.void, 0) }));
+        box = box.child(blink(stripes, true, { calm, from: 0.15 }));
+      }
+      return box.child(label.text_color(P.void).font_weight(700));
     }
     const fill = alpha(st.color, focused ? 0.2 : 0.11);
     const edge = alpha(st.color, focused ? 0.85 : 0.45);
@@ -200,13 +164,15 @@ export default class PhPane extends View {
       .flex_1().min_w(0).overflow_hidden().gap(7).items_center()
       .child(div().flex_none().text_color(addrColor).font_weight(700).child(addr))
       .child(sep())
-      .child(div().flex_none().max_w(140).truncate().text_color(textMain).child(prog))
-      .when(Boolean(dir), (el) => el.child(sep()).child(div().flex_shrink(1).min_w(24).truncate().text_color(textMain).child(dir)))
+      // Shrink weights: cwd gives way ~40x faster than prog/branch, so it elides first (down to "…"),
+      // then prog and branch ellipsize. Everything has a floor, so nothing hard-clips.
+      .child(div().flex_shrink(1).min_w(40).max_w(140).truncate().text_color(textMain).child(prog))
+      .when(Boolean(dir), (el) => el.child(sep()).child(div().flex_shrink(40).min_w(16).truncate().text_color(textMain).child(dir)))
       .when(Boolean(p.branch), (el) =>
         el.child(sep()).child(
-          h_flex().flex_shrink(0).min_w(0).max_w(220).overflow_hidden().items_center()
+          h_flex().flex_shrink(1).min_w(64).max_w(220).overflow_hidden().items_center()
             .child(div().flex_none().text_color(P.dim).child("git:"))
-            .child(div().min_w(0).truncate().text_color(idle ? P.dim : st.key === "shell" ? P.dim2 : P.fg).child(p.branch)),
+            .child(div().flex_shrink(1).min_w(0).truncate().text_color(idle ? P.dim : st.key === "shell" ? P.dim2 : P.fg).child(p.branch)),
         ));
 
     // Right: label, time-in-state, signal bars.
