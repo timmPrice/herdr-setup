@@ -75,7 +75,7 @@ export default class NkSakura extends View {
 
   render(cx) {
     const show = showState();
-    if (show === "hidden") return null; // render nothing: Herdr drops the float (and its frame)
+    if (show === "hidden") return div(); // render nothing: Herdr drops the float (and its frame)
     const list0 = props()?.demo ? DEMO : agents();
     if (show === "mini") return this.mini(list0);
     const calm = props()?.intensity === "calm";

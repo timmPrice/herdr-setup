@@ -8,7 +8,8 @@
 # ./install.sh keeps whatever this last set. The repo's layout file stays "full".
 set -euo pipefail
 HOME_DIR="${HERDR_APP_HOME:-$HOME/.config/herdr-app}"
-LAYOUT="$HOME_DIR/layouts/neo-kyoto.json"
+# NK_LAYOUT (internal, used by install.sh) points at another copy of the layout to read or patch.
+LAYOUT="${NK_LAYOUT:-$HOME_DIR/layouts/neo-kyoto.json}"
 [ -f "$LAYOUT" ] || { echo "neo-kyoto is not installed ($LAYOUT missing): run ./install.sh first" >&2; exit 1; }
 
 case "${1:-}" in
@@ -18,7 +19,7 @@ case "${1:-}" in
 esac
 
 python3 -I - "$LAYOUT" "${1:-}" <<'EOF'
-import json, sys
+import json, os, sys, tempfile
 path, want = sys.argv[1], sys.argv[2]
 with open(path) as f:
     tree = json.load(f)
@@ -41,8 +42,17 @@ if not found:
 if not want:
     print(" ".join(sorted({i for _, i in found})))
     sys.exit(0)
-with open(path, "w") as f:
-    json.dump(tree, f, indent=2, ensure_ascii=False)
-    f.write("\n")
+# Herdr watches this file: write a temp file next to it, then rename it over (atomic).
+d = os.path.dirname(os.path.abspath(path))
+fd, tmp = tempfile.mkstemp(dir=d, prefix=".neo-kyoto.", suffix=".tmp")
+try:
+    with os.fdopen(fd, "w") as f:
+        json.dump(tree, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    os.chmod(tmp, os.stat(path).st_mode & 0o777)
+    os.replace(tmp, path)
+except BaseException:
+    os.unlink(tmp)
+    raise
 print("neo-kyoto intensity: " + want + " (" + ", ".join(m for m, _ in found) + ")")
 EOF
