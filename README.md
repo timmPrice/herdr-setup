@@ -1,10 +1,65 @@
 # herdr-phosphor
 
 PHOSPHOR: a gruvbox amber/green CRT console look for the Herdr app (layout `phosphor`, theme, `ph-*` mods).
+What it looks like and how it behaves: [RECIPE.md](RECIPE.md).
 
-- `./check.sh` checks that lib/ copies are in sync, runs the node tests (`tests/`), validates the JSON and runs `herdr-app check` on every mod.
-- `./install.sh` copies `layouts/phosphor.*`, `themes/phosphor.json`, `backgrounds/phosphor-*` and `mods/ph-*` into `~/.config/herdr-app` and adds `ctrl-shift-u` (respond: jump to the oldest blocked agent) if that key is free. Then run `herdr-app do layout.switch '{"name":"phosphor"}'`.
-- `./intensity.sh calm|full` dials the motion down or back up (it sets the layout props, and ph-kit mirrors them to `shared("ph.intensity")`).
-- `lib/` holds the shared helpers. Edit them there and run `tools/sync-lib.sh`, which copies them into each mod.
-- `tools/fake.sh <mod> tools/scenarios/demo.json [--install]` renders a mod with fake agents and spaces. `tools/fake.sh --clean` removes the fakes.
+## Install
+
+```sh
+./install.sh
+herdr-app do layout.switch '{"name":"phosphor"}'
+```
+
+`install.sh` runs `./check.sh` first and refuses to install if it fails. It copies `layouts/phosphor.*`,
+`themes/phosphor.json`, `backgrounds/phosphor-*` and `mods/ph-*` into `~/.config/herdr-app` (`HERDR_APP_HOME`
+overrides) and touches nothing else. It adds `"ctrl-shift-u": "ph-kit.respond"` to section `layout:phosphor` in
+`keys.json` only if that key is free there. Re-running it updates in place and keeps your calm/full choice.
+
+## Switch
+
+- To PHOSPHOR: `herdr-app do layout.switch '{"name":"phosphor"}'`, or pick it with `ctrl-shift-l`.
+- Back to your previous layout: `ctrl-shift-l`, or `herdr-app do layout.switch '{"name":"<name>"}'`.
+
+## Respond key
+
+`ctrl-shift-u` jumps to the agent that has been blocked (`[WAIT]`) longest. It lives in section `layout:phosphor`, so
+it only applies while PHOSPHOR is showing. Clicking the red title strip, the status line's WAIT count or a WAIT toast
+does the same. To use another key, edit that entry in `~/.config/herdr-app/keys.json`; the status line, pane headers
+and toasts read the key from there.
+
+## Calm
+
+```sh
+./intensity.sh calm   # no scanlines, no blinking or loops, glow down to its core, solid hazard plates, no boot overlay
+./intensity.sh full   # back to everything
+./intensity.sh        # print the current one
+```
+
+It edits the installed layout (props.intensity on every ph-* block, plus the scanline background, `terminal_opacity`
+and the main pane frame); Herdr reloads it live. The repo's layout stays `full`.
+
+## Uninstall
+
+```sh
+herdr-app do layout.switch '{"name":"<another layout>"}'
+H=~/.config/herdr-app
+rm -f  $H/layouts/phosphor.json $H/layouts/phosphor.svg $H/themes/phosphor.json $H/backgrounds/phosphor-scanlines.png
+rm -rf $H/mods/ph-kit $H/mods/ph-title $H/mods/ph-tabs $H/mods/ph-side $H/mods/ph-telemetry \
+       $H/mods/ph-pane $H/mods/ph-status $H/mods/ph-toast $H/mods/ph-boot
+```
+
+Then remove the `"layout:phosphor"` section (it only holds `ctrl-shift-u`) from `~/.config/herdr-app/keys.json`.
+
+## Develop
+
+- `./check.sh` checks that lib/ copies are in sync, runs the node tests (`tests/`), validates the JSON and runs
+  `herdr-app check` on lib and every mod.
+- `node --import ./tests/stubs/register.mjs --test tests/*.test.mjs` runs only the node tests.
+- `lib/` holds the shared helpers. Edit them there and run `tools/sync-lib.sh`, which copies them into each mod
+  (mods can't import across folders).
+- `tools/fake.sh <mod> tools/scenarios/demo.json [--install]` renders a mod with fake agents and spaces.
+  `tools/fake.sh --clean` removes the installed fakes.
+- `python3 -I tools/make-boot-art.py` regenerates the scanline background and the boot wordmark glow.
+- Project rules: no sound; idle is still; minute-resolution clocks only, no per-second redraws; motion only on
+  RUN/WAIT, and none in calm; amber means "you are here" and nothing else.
 - Fonts are in `mods/ph-kit/fonts/`; their licences and changes are listed in `README.txt` there.
