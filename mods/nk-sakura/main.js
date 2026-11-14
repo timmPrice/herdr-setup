@@ -11,11 +11,16 @@
 // - Hover a blossom: name + kanji status beside it. Hover the tree: agent list in the open
 //   bottom-left corner (else a one-line status summary). Click a blossom or row: agent.focus.
 //
+// - Show/hide: shared("nk.sakura") is "shown" (default), "mini" (just the summary line) or "hidden"
+//   (renders nothing, so the float disappears). The key command "nk-sakura.toggle" (ctrl-shift-y in
+//   keys.json) flips hidden <-> shown; the "–" in the tree's top-left corner (on hover) collapses to
+//   mini, and clicking the mini line expands it again. Shared values persist across restarts.
+//
 // Props: { intensity: "calm" | "full" (default "full"), demo?: true (fake agents, for testing) }.
 
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex, v_flex } from "gpui-base";
-import { props, agents, run, fonts, placement } from "herdr";
+import { props, agents, run, fonts, placement, shared, setShared, nextCommand } from "herdr";
 import { P, statusColor, kanji, FONT_JP } from "./palette.js";
 import { ANCHORS, assign, newState } from "./assign.js";
 
@@ -28,6 +33,11 @@ const LIST_ROWS = 4;
 
 const BUD = "#9a737e"; // dim grey-pink
 const URGENCY = { blocked: 0, done: 1, working: 2, idle: 3 };
+const SHOW_KEY = "nk.sakura";
+const showState = () => {
+  const v = shared(SHOW_KEY);
+  return v === "mini" || v === "hidden" ? v : "shown";
+};
 
 const DEMO = [
   ["herdr", "build-nk-sakura", "working"], ["herdr", "build-nk-pane", "working"],
@@ -45,18 +55,31 @@ const nameOf = (a) => {
 };
 
 export default class NkSakura extends View {
-  init() {
+  init(_p, cx) {
     this.hover = null; // address of the hovered blossom
     this.over = false; // pointer anywhere on the tree
     // Remembered limbOf[space] / slotOf[address] (see assign.js), so blossoms never jump.
     Object.assign(this, newState());
     // Fonts only change on start or a look change, which reloads the mod: check once.
     this.jp = fonts().includes(FONT_JP);
+    // Key commands ("nk-sakura.toggle"). Every copy gets the command, and each one writes the same value.
+    cx?.spawn(async (cx) => {
+      for (;;) {
+        const c = await nextCommand();
+        if (c === "toggle") setShared(SHOW_KEY, showState() === "hidden" ? "shown" : "hidden");
+        else if (c === "show" || c === "mini" || c === "hidden") setShared(SHOW_KEY, c === "show" ? "shown" : c);
+        cx.notify();
+      }
+    });
   }
 
   render(cx) {
+    const show = showState();
+    if (show === "hidden") return null; // render nothing: Herdr drops the float (and its frame)
+    const list0 = props()?.demo ? DEMO : agents();
+    if (show === "mini") return this.mini(list0);
     const calm = props()?.intensity === "calm";
-    const list = props()?.demo ? DEMO : agents();
+    const list = list0;
     const slots = assign(list, this);
     const jpf = (el) => (this.jp ? el.font_family(FONT_JP) : el);
     const showList = this.over || Boolean(placement()?.hovered);
@@ -174,11 +197,58 @@ export default class NkSakura extends View {
 
     // Bottom-left corner: agent list on hover, else a quiet status summary.
     kids.push(showList ? this.list(list, jpf) : this.summary(list, jpf));
+    // Top-left corner (empty in the art): collapse to the mini summary line, on hover only.
+    if (showList) {
+      kids.push(
+        div()
+          .id("nk-sakura-collapse")
+          .absolute()
+          .left(2)
+          .top(0)
+          .size(18)
+          .rounded(4)
+          .flex()
+          .items_center()
+          .justify_center()
+          .cursor_pointer()
+          .text_size(13)
+          .text_color(P.grey)
+          .hover((s) => s.bg(P.bg1).text_color(P.pink))
+          .on_click((_e, cx) => {
+            cx.stop_propagation();
+            setShared(SHOW_KEY, "mini");
+          })
+          .child("–"),
+      );
+    }
     return root.children(kids);
   }
 
   focus(a) {
     if (!String(a.address).startsWith("demo-")) run("agent.focus", { terminal: a.address });
+  }
+
+  // Collapsed: 桜 and the status summary on one line; click to bring the tree back.
+  mini(list) {
+    const jpf = (el) => (this.jp ? el.font_family(FONT_JP) : el);
+    const counts = {};
+    for (const a of list) counts[a.status] = (counts[a.status] ?? 0) + 1;
+    const parts = ["blocked", "done", "working", "idle"].filter((s) => counts[s]);
+    return h_flex()
+      .id("nk-sakura-mini")
+      .h(18)
+      .px(4)
+      .gap(8)
+      .items_center()
+      .cursor_pointer()
+      .text_size(11)
+      .on_click((_e, cx) => {
+        cx.stop_propagation();
+        setShared(SHOW_KEY, "shown");
+      })
+      .child(jpf(div().text_color(P.pink).child("桜")))
+      .children(parts.map((s) =>
+        jpf(div().text_color(statusColor(s)).opacity(s === "idle" ? 0.7 : 1).child(`${kanji(s)}${counts[s]}`))));
   }
 
   summary(list, jpf) {
