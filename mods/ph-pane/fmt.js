@@ -21,21 +21,34 @@ export function paneFrame(node) {
 
 const pad2 = (n) => String(n).padStart(2, "0");
 
-/** Live readout: 04:12 · 1h04:12 · 2d03h. */
-export function fmtLive(ms) {
-  const s = Math.max(0, Math.floor((ms ?? 0) / 1000));
-  const m = Math.floor(s / 60), h = Math.floor(m / 60);
-  if (h === 0) return `${pad2(m)}:${pad2(s % 60)}`;
-  if (h < 24) return `${h}h${pad2(m % 60)}:${pad2(s % 60)}`;
+/** Time-in-state at minute resolution (project rule): <1m · 3m · 1h04m · 2d03h. */
+export function fmtMin(ms) {
+  const m = Math.floor(Math.max(0, Number(ms) || 0) / 60000), h = Math.floor(m / 60);
+  if (m < 1) return "<1m";
+  if (h === 0) return `${m}m`;
+  if (h < 24) return `${h}h${pad2(m % 60)}m`;
   return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
 }
 
-/** Coarse readout (minute resolution, so it doesn't tick): 27m · 1h04m · 2d03h. */
-export function fmtCoarse(ms) {
-  const m = Math.floor(Math.max(0, ms ?? 0) / 60000), h = Math.floor(m / 60);
-  if (h === 0) return `${pad2(m)}m`;
-  if (h < 24) return `${h}h${pad2(m % 60)}m`;
-  return `${Math.floor(h / 24)}d${pad2(h % 24)}h`;
+/** ms until just past the next wall-clock minute (all copies re-render in the same frame). */
+export function msToNextMinute(now) {
+  return 60000 - (now % 60000) + 5;
+}
+
+/**
+ * What may move / tick in one header copy. `active` = this pane is focused in the tab on screen.
+ * Hidden tabs and unfocused panes run nothing (no timer, no loops); idle/done/shell never tick.
+ *   timer: per-minute time re-render · bars: signal-bar loop · blink: WAIT stripe blink
+ */
+export function motionPlan({ state, focused = false, shownTab = false, calm = false } = {}) {
+  const active = Boolean(focused && shownTab);
+  const busy = state === "working" || state === "blocked";
+  return {
+    active,
+    timer: active && busy,
+    bars: active && state === "working" && !calm,
+    blink: active && state === "blocked" && !calm,
+  };
 }
 
 /** From keys(): the binding for ph-kit.respond, phosphor layout section first, then global, then any. */
