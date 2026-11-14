@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summary, alertText, respondKey, clockText, uplink } from "../mods/ph-title/text.js";
+import { summary, alertText, respondKey, clockText, uplink, updateTag } from "../mods/ph-title/text.js";
 import { Since, oldestBlocked } from "../mods/ph-title/lib/since.js";
 import { tabLabel, estWidth } from "../mods/ph-tabs/text.js";
 
@@ -57,4 +57,10 @@ test("tab labels", () => {
   assert.equal(tabLabel({ index: 2, name: "2", named: false }, "claude"), "2:claude");
   assert.equal(tabLabel({ index: 3, name: "3", named: false }), "3:sh");
   assert.ok(estWidth("1:build", { active: true, status: "blocked" }) > estWidth("1:build", {}));
+});
+
+test("UPDATE tag only when an app update is downloaded", () => {
+  assert.equal(updateTag(undefined), null);
+  assert.equal(updateTag({ app: { version: "0.9.1", ready: null } }), null);
+  assert.deepEqual(updateTag({ app: { version: "0.9.1", ready: "0.9.2" } }), { label: "UPDATE", tip: "Restart into v0.9.2" });
 });

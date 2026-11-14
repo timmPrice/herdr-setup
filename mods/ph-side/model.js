@@ -187,7 +187,7 @@ export function place(s, ps) {
 
 /**
  * Spaces in display order, each worktree space under its main checkout: [{s, tree}] with tree "├─"/"└─"/null.
- * gitOf(space) → { repo, linked } | null. Display only: the real order is never changed here.
+ * gitOf(space) → { repo, linked } | null. main.js then moves the real order to match (moveBatch).
  */
 export function nestSpaces(sp, gitOf) {
   const list = (sp ?? []).map((s) => ({ s, g: gitOf(s) ?? null }));
@@ -220,4 +220,23 @@ export function findNode(node, id) {
   if (node?.id === id) return node;
   for (const c of node?.children ?? []) { const f = findNode(c, id); if (f) return f; }
   return null;
+}
+
+/**
+ * The space.move calls that turn the real order into the drawn one, as the stock spaces mod does:
+ * the batch is simulated so each later index already includes the earlier moves. [{id, index}] with a
+ * 1-based index; [] when the orders already match (or don't hold the same spaces).
+ */
+export function moveBatch(order, target) {
+  const cur = [...(order ?? [])];
+  const want = target ?? [];
+  if (cur.length !== want.length || want.some((id) => !cur.includes(id))) return [];
+  const out = [];
+  for (let i = 0; i < want.length; i++) {
+    const from = cur.indexOf(want[i]);
+    if (from === i) continue;
+    out.push({ id: want[i], index: i + 1 });
+    cur.splice(i, 0, cur.splice(from, 1)[0]);
+  }
+  return out;
 }

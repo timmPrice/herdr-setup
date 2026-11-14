@@ -21,7 +21,7 @@ import { isCalm, blink, cursor, bars } from "./lib/motion.js";
 import { tabSeed } from "./lib/since.js";
 import {
   isCompact, pad2, fmtMin, Clock, progName, barLevel, pipsBySpace, fitPips, homeNode, gitBits,
-  kidStatus, treeText, kidName, daemonList, timed, minuteKey, place, nestSpaces, findNode,
+  kidStatus, treeText, kidName, daemonList, timed, minuteKey, place, nestSpaces, moveBatch, findNode,
 } from "./model.js";
 
 const STORE = "ph-side.since";
@@ -31,6 +31,7 @@ const ROW_H = 44;
 const SUB_H = 22;
 const ROW_GAP = 5;
 const GIT_EVERY = 60000;
+const RAIL_KEY = "railWidth"; // sidebar px before the last fold to the rail
 
 export default class PhSide extends View {
   init(_props, cx) {
@@ -63,6 +64,19 @@ export default class PhSide extends View {
       if (this.readoutKey(now) !== this.shownKey) cx.notify();
       if (now - this.gitAt >= GIT_EVERY - 1000) this.refreshGit(cx);
     });
+  }
+
+  // Worktree spaces drawn under their checkout are moved there for real (space.move, the stock spaces
+  // mod's batch), so alt-N and space.next/prev follow what's drawn. One batch per distinct order; the
+  // same batch is retried only after 1 s (a write can lose a sync conflict and echo back late).
+  reorder(sp, nodes) {
+    const order = sp.map((s) => s.id), target = nodes.map((n) => n.s.id);
+    const batch = moveBatch(order, target);
+    if (!batch.length) { this.ordering = null; return; }
+    const key = JSON.stringify([order, target]);
+    if (this.ordering?.key === key && Date.now() - this.ordering.at < 1000) return;
+    this.ordering = { key, at: Date.now() };
+    for (const m of batch) { try { run("space.move", m); } catch { break; } }
   }
 
   readoutKey(now) {
@@ -148,6 +162,7 @@ export default class PhSide extends View {
     this.lastFocus = fa;
 
     const nodes = nestSpaces(sp, (s) => this.git[placeOf.get(s.id)] ?? null);
+    this.reorder(sp, nodes);
     const ai = nodes.findIndex((n) => n.s.active);
     const activeId = ai >= 0 ? nodes[ai].s.id : null;
     if (activeId && activeId !== this.lastActive) { try { this.nodeScroll.scroll_to_item(ai); } catch {} }
@@ -194,22 +209,41 @@ export default class PhSide extends View {
   // "▌01 // NODES 節点 ......... 05 [+]"
   head(num, label, kanji, count, W, pad, compact, plus) {
     const w = W + 2 * pad;
-    const add = div().id("ph-space-new").flex_none().w(18).h(18).flex().items_center().justify_center()
+    const btn = (id, glyph, tip, fn) => div().id(id).flex_none().w(18).h(18).flex().items_center().justify_center()
       .border(1).border_color(P.grey).text_color(P.dim2).font_family(FONT_TERM).text_size(13).cursor_pointer()
-      .hover((s) => s.border_color(P.dim2).text_color(P.fg)).tooltip("New space")
-      .on_click(() => run("space.new")).child("+");
+      .hover((s) => s.border_color(P.dim2).text_color(P.fg)).tooltip(tip)
+      .on_click(() => fn()).child(glyph);
+    const add = btn("ph-space-new", "+", "New space", () => run("space.new"));
+    // The stock brand row's two buttons: search (the picker) and the rail toggle.
+    const find = btn("ph-search", "/", "Search", () => run("mod.open", { name: "picker" }));
+    const rail = btn("ph-rail", compact ? "»" : "«", compact ? "Unfold the sidebar" : "Fold the sidebar to a rail", () => this.toggleRail(compact));
+    const tiny = compact && w < 70; // the 44 px rail: the unfold button takes the number's place
     return div().relative().flex_none().w(w).h(HEAD_H).mt(6).mb(4)
       .child(plate(w, HEAD_H, P.panel, { cut: 8, corners: "tr" }))
       .child(div().absolute().left(0).top(0).w(3).h(HEAD_H).bg(P.amber))
       .child(h_flex().absolute().left(0).top(0).w(w).h(HEAD_H).pl(compact ? 7 : 12).pr(compact ? 4 : 10).gap(compact ? 4 : 6).items_center()
-        .child(div().flex_none().text_color(P.amber).child(num))
+        .when(!(plus && tiny), (el) => el.child(div().flex_none().text_color(P.amber).child(num)))
+        .when(plus && tiny, (el) => el.child(rail))
         .when(!compact, (el) => el
           .child(div().flex_none().text_color(P.grey).child("//"))
           .child(div().flex_none().text_color(P.dim2).child(label)))
         .when(!compact || w >= 70, (el) => el.child(div().flex_none().font_family(FONT_JP).text_size(12).text_color(P.dim).child(kanji)))
         .child(div().flex_1())
         .when(!compact || w >= 100, (el) => el.child(div().flex_none().font_family(FONT_NUM).text_size(20).text_color(P.amber).child(pad2(count))))
+        .when(plus && !compact, (el) => el.child(find))
+        .when(plus && !tiny, (el) => el.child(rail))
         .when(plus && (!compact || w >= 50), (el) => el.child(add)));
+  }
+
+  // Rail toggle, as the stock workspace-chrome does it: fold to 44 px, unfold to the width kept from
+  // the last fold (this mod's localStorage; default the layout's 420).
+  toggleRail(compact) {
+    let width = null;
+    try { width = findNode(layout(), "sidebar")?.size?.px ?? null; } catch {}
+    if (!compact && width) { try { localStorage.setItem(RAIL_KEY, String(Math.round(width))); } catch {} }
+    let back = 420;
+    try { back = Number(localStorage.getItem(RAIL_KEY)) || 420; } catch {}
+    run("layout.resize", { id: "sidebar", px: compact ? Math.max(160, back) : 44 });
   }
 
   // One space: index, name, branch / ahead / behind, one pip per agent. Active = inverse amber plate.

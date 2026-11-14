@@ -52,3 +52,10 @@ export function uplink(list = []) {
   if (ms.some((m) => m?.layout === "loading")) return { ok: true, label: "SYNC" };
   return { ok: true, label: "OK" };
 }
+
+/** The UPDATE tag beside v<ver>: null unless an app update is downloaded (updates().app.ready). */
+export function updateTag(u) {
+  const ready = u?.app?.ready;
+  if (!ready) return null;
+  return { label: "UPDATE", tip: typeof ready === "string" ? `Restart into v${ready}` : "Restart into the downloaded update" };
+}

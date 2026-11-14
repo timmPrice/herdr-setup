@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isCompact, pad2, fmtMin, Clock, timingStatus, progName, barLevel, pipsBySpace, fitPips, homeNode,
-  gitBits, kidStatus, subTree, treeText, daemonList, timed, minuteKey, place, nestSpaces, findNode,
+  gitBits, kidStatus, subTree, treeText, daemonList, timed, minuteKey, place, nestSpaces, moveBatch, findNode,
 } from "../mods/ph-side/model.js";
 
 const M = 60_000, H = 60 * M, D = 24 * H;
@@ -148,4 +148,16 @@ test("nodes: place, worktree nesting, git bits, home node, layout find", () => {
   assert.deepEqual(gitBits(null, { ahead: 0, behind: 4 }).map((b) => b.text), ["↓4"]);
   assert.equal(homeNode({ space: "s1", space_name: "herdr" }, [{ id: "s1", index: 1, name: "herdr" }]), "01·herdr");
   assert.equal(findNode({ id: "root", children: [{ id: "body", children: [{ id: "sidebar", size: { px: 420 } }] }] }, "sidebar").size.px, 420);
+});
+
+test("moveBatch: real order follows the nested one (simulated indexes, 1-based)", () => {
+  const apply = (order, batch) => { const o = [...order]; for (const m of batch) { o.splice(o.indexOf(m.id), 1); o.splice(m.index - 1, 0, m.id); } return o; };
+  assert.deepEqual(moveBatch(["a", "b", "c"], ["a", "b", "c"]), []);
+  assert.deepEqual(moveBatch(["a", "b", "wt"], ["a", "wt", "b"]), [{ id: "wt", index: 2 }]);
+  for (const [order, target] of [
+    [["a", "b", "lone", "wt1", "wt2"], ["a", "wt1", "wt2", "b", "lone"]],
+    [["wt2", "x", "a", "wt1"], ["x", "a", "wt1", "wt2"]],
+  ]) assert.deepEqual(apply(order, moveBatch(order, target)), target);
+  assert.deepEqual(moveBatch(["a", "b"], ["a"]), []); // a space came or went mid-render: no moves
+  assert.deepEqual(moveBatch(["a", "b"], ["a", "c"]), []);
 });

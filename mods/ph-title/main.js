@@ -12,7 +12,7 @@ import { everyMinute } from "./lib/tick.js";
 import { isCalm, blink } from "./lib/motion.js";
 import { plate, outline, hazard } from "./lib/plate.js";
 import { Since, tabSeed, oldestBlocked } from "./lib/since.js";
-import { summary, alertText, clockText, respondKey, uplink } from "./text.js";
+import { summary, alertText, clockText, respondKey, uplink, updateTag } from "./text.js";
 
 let bootOpened = false; // sessionStorage is per mod copy (tested live); ph-boot owns the real per-process guard
 
@@ -38,8 +38,8 @@ export default class PhTitle extends View {
   }
 
   left(w) {
-    let ver = null;
-    try { ver = updates()?.app?.version ?? null; } catch {}
+    let ver = null, upd = null;
+    try { const u = updates(); ver = u?.app?.version ?? null; upd = updateTag(u); } catch {}
     // macOS with titlebar:none: the traffic lights sit in this row, so clear them (as the shipped tabs mod does).
     let lights = 0;
     try {
@@ -55,6 +55,13 @@ export default class PhTitle extends View {
           .child(div().font_family(FONT_MARK).text_size(13).child("HERDR/OS"))
           .child(div().font_family(FONT_JP).text_size(12).child("端末"))))
       .when(Boolean(ver), (el) => el.child(div().pl(8).flex_none().font_family(FONT_NUM).text_size(16).text_color(P.dim).child(`v${ver}`)))
+      // A downloaded update waits (the stock footer's accent dot): click restarts into it.
+      .when(Boolean(upd), (el) => el.child(div().ml(8).id("ph-update").flex_none().px(5).h(18).flex().items_center()
+        .border(1).border_color(alpha(P.green, 0.7)).text_size(11).text_color(P.green).cursor_pointer()
+        .hover((s) => s.bg(alpha(P.green, 0.16))).tooltip(upd.tip)
+        .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+        .on_click((_e, cx) => { cx.stop_propagation(); run("app.update"); })
+        .child(upd.label)))
       ,
       // TTY tag and echo shrink (then vanish) before the summary/UPLINK/clock are touched.
       h_flex().h_full().flex_shrink(50).min_w(0).overflow_hidden().items_center()
@@ -110,7 +117,13 @@ export default class PhTitle extends View {
     return h_flex().h_full().flex_none().gap(14).pr(6).items_center()
       .child(h_flex().gap(5).items_center().text_size(12)
         .child(div().text_color(P.dim).child("UPLINK"))
-        .child(div().text_color(up.ok ? P.dim2 : P.red).child(up.label)))
+        .child(div().text_color(up.ok ? P.dim2 : P.red).child(up.label))
+        .child(div().id("ph-machine-add").w(16).h(16).flex().items_center().justify_center().cursor_pointer()
+          .border(1).border_color(P.line).font_family(FONT_TERM).text_size(11).text_color(P.dim)
+          .hover((s) => s.border_color(P.dim2).text_color(P.fg)).tooltip("Add machine")
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          .on_click((_e, cx) => { cx.stop_propagation(); run("mod.open", { name: "machine-add" }); })
+          .child("+")))
       .child(div().font_family(FONT_NUM).text_size(21).text_color(P.fg).child(clockText(new Date(), true)))
       // Linux: window().buttons can be false (some WMs) yet titlebar:none leaves no buttons at all, so draw them.
       .when(Boolean(w?.buttons || w?.platform === "linux"), (el) => el.child(h_flex().gap(4).items_center()
