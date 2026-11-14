@@ -35,9 +35,27 @@ test("since tracker", () => {
   assert.equal(s.since("t1"), 6000);
   const r = Since.load(s.dump());
   assert.equal(r.since("t1"), 6000);
-  assert.ok(r.observe([], 7000));
-  assert.equal(r.since("t1"), null);
+  assert.ok(!r.observe([], 7000));            // absent once: kept, nothing to persist
+  assert.equal(r.since("t1"), 6000);
   assert.equal(Since.load("garbage").since("x"), null);
+});
+
+test("since survives a restart with an empty first render", () => {
+  const H = 3600_000, DAY = 24 * H;
+  const s = new Since();
+  s.observe([{ address: "t1", status: "blocked" }, { address: "t2", status: "working" }], 1_000_000);
+  const saved = s.dump();
+  const r = Since.load(saved);                       // restart 1 h later
+  assert.equal(r.observe([], 1_000_000 + H), false);
+  assert.equal(r.observe([], 1_000_000 + H), false);
+  assert.equal(r.dump(), saved);                     // empty renders change nothing
+  r.observe([{ address: "t1", status: "blocked" }], 1_000_000 + H);
+  assert.equal(r.elapsed("t1", 1_000_000 + H), H);   // clock carried over
+  assert.equal(r.since("t2"), 1_000_000);            // absent t2 still remembered
+  // 31 days later a change elsewhere prunes the long-absent t2, keeps listed t1
+  r.observe([{ address: "t1", status: "working" }], 1_000_000 + 31 * DAY);
+  assert.equal(r.since("t2"), null);
+  assert.equal(r.since("t1"), 1_000_000 + 31 * DAY);
 });
 
 test("since seed from tabs", () => {

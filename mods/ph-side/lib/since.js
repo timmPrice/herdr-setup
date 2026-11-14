@@ -7,7 +7,15 @@
 //   render() { const a = agents(); if (this.since.observe(a, Date.now(), tabSeed(spaces())))
 //                localStorage.setItem("since", this.since.dump());
 //              ... fmtDur(this.since.elapsed(agent.address)) }
-// Re-render once a second only where a ticking timer is shown (cx.timer.every(1000, cx => cx.notify())).
+// Project rule: time-in-state is shown at minute resolution; re-render at most once a wall-clock minute,
+// and only where a RUN/WAIT readout is on screen. Nothing ticks per second.
+//
+// Restart-safe: an address missing from one render is NOT forgotten (an empty first agents() after a
+// restart must not wipe history). An absent address is dropped only once its entry is older than
+// 30 days (same rule as ph-side's Clock and the shipped agents mod), and only on an observe that
+// changed something else, so an empty or unchanged render never writes.
+
+const FORGET = 30 * 24 * 3600 * 1000;
 
 export class Since {
   constructor(map = {}) { this.map = map; } // address → { status, at }
@@ -20,7 +28,8 @@ export class Since {
 
   /**
    * Record agents' statuses. seed(agent) → epoch ms | null, used only for an address seen the first time.
-   * Forgets addresses no longer present. Returns true when anything changed (persist then).
+   * Absent addresses are kept (see header); forgotten only when absent and older than 30 days.
+   * Returns true when anything changed (persist then).
    */
   observe(list, now = Date.now(), seed = null) {
     let changed = false;
@@ -37,7 +46,9 @@ export class Since {
         changed = true;
       }
     }
-    for (const k of Object.keys(this.map)) if (!seen.has(k)) { delete this.map[k]; changed = true; }
+    if (changed) {
+      for (const [k, e] of Object.entries(this.map)) if (!seen.has(k) && now - (e?.at ?? 0) > FORGET) delete this.map[k];
+    }
     return changed;
   }
 
