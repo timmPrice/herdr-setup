@@ -26,6 +26,11 @@ copy() { # src dest-relative-to-home
   echo "installed $rel"
 }
 
+# keep the intensity the person chose with ./intensity.sh (the repo's layout says "full")
+keep=""
+[ -f "$HOME_DIR/layouts/neo-kyoto.json" ] && keep=$(./intensity.sh 2>/dev/null || true)
+
 for f in layouts/neo-kyoto.*; do copy "$f" "$f"; done
+[ "$keep" = "calm" ] && ./intensity.sh calm
 copy themes/neo-kyoto.json themes/neo-kyoto.json
 for m in mods/nk-*/; do m=${m%/}; copy "$m" "$m"; done

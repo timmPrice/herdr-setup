@@ -13,7 +13,7 @@
 
 import { View, div, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { panes, props, run, theme, home, layout } from "herdr";
+import { panes, props, run, theme, home, layout, shared, setShared } from "herdr";
 import { P, JP, kanji, statusColor } from "./palette.js";
 
 const ICONS = "mods/nk-pane";
@@ -68,6 +68,10 @@ function flicker(text, offset) {
 export default class NkPane extends View {
   init() {
     this.hovered = false;
+    // Integration wiring: the root "toast" can't take props, so mirror this layout's
+    // intensity into shared("nk.intensity"), which nk-toast reads. Set only on change.
+    const want = props()?.intensity === "calm" ? "calm" : "full";
+    if (shared("nk.intensity") !== want) setShared("nk.intensity", want);
   }
 
   me() {
