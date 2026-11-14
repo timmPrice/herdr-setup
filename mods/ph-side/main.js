@@ -337,7 +337,7 @@ export default class PhSide extends View {
       .tooltip(hasPane ? `Focus ${k.address}` : `Peek ${k.address}`)
       .on_click(() => run(hasPane ? "agent.focus" : "terminal.peek", { terminal: k.address }))
       .child(div().flex_none().font_family(FONT_TERM).text_size(12).text_color(P.grey).child(treeText(s.lines)))
-      .child(div().flex_none().w(blocked ? 36 : 34).font_family(FONT_TERM).text_size(11)
+      .child(div().flex_none().w(36).font_family(FONT_TERM).text_size(11)
         .text_color(st.color).when(blocked, (el) => el.font_weight(700)).child(st.short))
       .child(div().flex_shrink(1).min_w(0).truncate().text_size(12).text_color(st.key === "idle" ? P.dim2 : P.fg).child(kidName(k)))
       .child(div().flex_none().text_size(11).text_color(P.dim).child(`@${k.address}`))
