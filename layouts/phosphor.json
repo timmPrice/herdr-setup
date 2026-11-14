@@ -1,0 +1,216 @@
+{
+  "id": "root",
+  "type": "column",
+  "theme": "phosphor",
+  "preview": "layouts/phosphor.svg",
+  "toast": "ph-toast",
+  "titlebar": "none",
+  "traffic_lights": [
+    12,
+    6
+  ],
+  "background": "canvas",
+  "font": "JetBrains Mono",
+  "ui_font": "Share Tech Mono",
+  "terminal_padding": [
+    12,
+    10
+  ],
+  "children": [
+    {
+      "id": "title",
+      "type": "block",
+      "size": {
+        "px": 24
+      },
+      "window_drag": true,
+      "content": {
+        "mod": "ph-title",
+        "props": {
+          "intensity": "full"
+        }
+      }
+    },
+    {
+      "id": "body",
+      "type": "row",
+      "divider": {
+        "width": 1,
+        "color": "border"
+      },
+      "children": [
+        {
+          "id": "sidebar",
+          "type": "column",
+          "size": {
+            "px": 420
+          },
+          "min": 44,
+          "max": 720,
+          "background": "chrome",
+          "divider": {
+            "width": 1,
+            "color": "border"
+          },
+          "children": [
+            {
+              "id": "side",
+              "type": "block",
+              "size": {
+                "weight": 1
+              },
+              "min": 120,
+              "content": {
+                "mod": "ph-side",
+                "props": {
+                  "intensity": "full"
+                }
+              }
+            },
+            {
+              "id": "telemetry",
+              "type": "block",
+              "size": {
+                "px": 240
+              },
+              "min": 60,
+              "content": {
+                "mod": "ph-telemetry",
+                "props": {
+                  "intensity": "full"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "work",
+          "type": "column",
+          "resizable": false,
+          "children": [
+            {
+              "id": "tabs",
+              "type": "block",
+              "size": {
+                "px": 26
+              },
+              "window_drag": true,
+              "content": {
+                "mod": "ph-tabs",
+                "props": {
+                  "intensity": "full"
+                }
+              }
+            },
+            {
+              "id": "work-body",
+              "type": "row",
+              "padding": 6,
+              "gap": 6,
+              "children": [
+                {
+                  "id": "main",
+                  "type": "block",
+                  "content": {
+                    "tab": "active",
+                    "pane": {
+                      "gap": 6,
+                      "radius": 0,
+                      "background": "background",
+                      "lone": true,
+                      "border": {
+                        "width": 1,
+                        "color": "#504945"
+                      },
+                      "focus": {
+                        "width": 2,
+                        "color": "#fabd2f"
+                      },
+                      "header": {
+                        "content": {
+                          "mod": "ph-pane",
+                          "props": {
+                            "intensity": "full"
+                          }
+                        },
+                        "height": 26,
+                        "position": "top",
+                        "reveal": "always"
+                      }
+                    }
+                  }
+                },
+                {
+                  "id": "panel",
+                  "type": "column",
+                  "hidden": true,
+                  "size": {
+                    "px": 368
+                  },
+                  "min": 280,
+                  "max": 900,
+                  "children": [
+                    {
+                      "id": "panel-body",
+                      "type": "stack",
+                      "active": "files",
+                      "children": [
+                        {
+                          "id": "files",
+                          "type": "block",
+                          "content": {
+                            "mod": "files"
+                          }
+                        },
+                        {
+                          "id": "changes",
+                          "type": "block",
+                          "content": {
+                            "mod": "changes"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "statusline",
+      "type": "row",
+      "size": {
+        "px": 22
+      },
+      "resizable": false,
+      "children": [
+        {
+          "id": "status",
+          "type": "block",
+          "content": {
+            "mod": "ph-status",
+            "props": {
+              "intensity": "full"
+            }
+          }
+        },
+        {
+          "id": "kit",
+          "type": "block",
+          "size": {
+            "px": 0
+          },
+          "content": {
+            "mod": "ph-kit",
+            "props": {
+              "intensity": "full"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
