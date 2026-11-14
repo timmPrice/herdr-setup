@@ -10,9 +10,10 @@
 //   full: the seal stamps in (big + transparent -> slams to size in ~180 ms) and the card
 //         fades out just before it closes.
 //   calm: no motion at all; it appears, then closes.
-// Click runs the action (like the shipped toast) and closes. It closes itself at `timeout`
-// (default 6 s) while still half visible, so Herdr's frame never shows empty; `timeout: null`
-// keeps it until clicked. Herdr's "<m> needs login; run hc machine login <m>" body becomes a
+// Click runs the action (like the shipped toast) and closes. Herdr itself closes every toast
+// overlay at `timeout` (about 5 s when it's missing or null; measured, there is no sticky
+// toast), so nk-toast closes a moment before that, mid-fade, and Herdr's frame never shows
+// empty. Herdr's "<m> needs login; run hc machine login <m>" body becomes a
 // command row with a Copy button, as in the shipped toast.
 
 import { View, div, image } from "gpui-kit";
@@ -29,7 +30,8 @@ const KIND = {
   warn: { seal: "mods/nk-toast/seal-warn-v3.svg", tint: P.orange }, // 警告
   info: { seal: "mods/nk-toast/seal-info-v3.svg", tint: P.aqua },   // 通知
 };
-const DEFAULT_TIMEOUT = 6000;
+const DEFAULT_TIMEOUT = 5000; // Herdr's own default (measured ~5 s)
+const EARLY_MS = 60;          // close this much before Herdr would
 const SEAL_MAX_H = 58, SEAL_MIN_H = 30, SEAL_RATIO = 0.72; // px; art is 72x100
 const SEAL_PAD = 9;             // px kept free above and below the seal
 const STAMP_FROM = 1.3;         // the seal starts this much bigger
@@ -46,18 +48,16 @@ function intensity() {
 export default class NkToast extends View {
   init(_props, cx) {
     const p = props() ?? {};
-    // null = keep until clicked (gpui-kit's toast meaning); a positive number = ms; else default
-    const sticky = p.timeout === null;
     const ms = typeof p.timeout === "number" && p.timeout > 0 ? p.timeout : DEFAULT_TIMEOUT;
-    const closeAt = Math.max(SLAM_MS + 100 + FADE_MS / 2, ms);
+    const closeAt = Math.max(SLAM_MS + 100 + FADE_MS / 2, ms - EARLY_MS);
     this.calm = intensity() === "calm"; // fixed for this toast's life
     // stage 0: seal big + transparent; 1: stamped; 2: fading out
     this.stage = this.calm ? 1 : 0;
     if (!this.calm) {
       cx.timer.after(16, (cx) => { this.stage = 1; cx.notify(); });
-      if (!sticky) cx.timer.after(closeAt - FADE_MS / 2, (cx) => { this.stage = 2; cx.notify(); });
+      cx.timer.after(closeAt - FADE_MS / 2, (cx) => { this.stage = 2; cx.notify(); });
     }
-    if (p.overlay && !sticky) cx.timer.after(closeAt, () => closeOverlay(p.overlay));
+    if (p.overlay) cx.timer.after(closeAt, () => closeOverlay(p.overlay));
   }
 
   seal(kind) {
