@@ -1,0 +1,30 @@
+#!/bin/sh
+# Neutral fake terminal content for the preview screenshot.
+clear
+d='\033[2m'; r='\033[0m'; g='\033[32m'; y='\033[33m'; c='\033[36m'; b='\033[1m'
+printf "${b}> add rate limiting to /v2/orders: token bucket per API key, 429 with Retry-After${r}\n\n"
+printf "● Read ${c}src/middleware/auth.ts${r} ${d}(142 lines)${r}\n"
+printf "● Read ${c}src/routes/v2/orders.ts${r} ${d}(388 lines)${r}\n"
+printf "● Search ${d}\"rateLimit\" in src/ — 3 matches${r}\n\n"
+printf "  The gateway already tags each request with its key id in auth.ts, so the bucket can\n"
+printf "  key on that. I'll add a small middleware with an in-memory store behind an interface,\n"
+printf "  so the Redis store can drop in later.\n\n"
+printf "● Write ${c}src/middleware/rate-limit.ts${r}\n"
+printf "  ${g}+ export function rateLimit(opts: { rate: number; burst: number; store?: BucketStore }) {${r}\n"
+printf "  ${g}+   const store = opts.store ?? new MemoryStore();${r}\n"
+printf "  ${g}+   return async (req, res, next) => {${r}\n"
+printf "  ${g}+     const { ok, retryAfter } = await store.take(req.keyId, opts.rate, opts.burst);${r}\n"
+printf "  ${g}+     if (ok) return next();${r}\n"
+printf "  ${g}+     res.set(\"Retry-After\", String(Math.ceil(retryAfter)));${r}\n"
+printf "  ${g}+     res.status(429).json({ error: \"rate_limited\" });${r}\n"
+printf "  ${g}+   };${r}\n"
+printf "  ${g}+ }${r}\n\n"
+printf "● Edit ${c}src/routes/v2/orders.ts${r} ${d}(+2 -0)${r}\n"
+printf "● Bash ${d}npm test -- rate-limit${r}\n"
+printf "  ${d}PASS${r} test/rate-limit.test.ts\n"
+printf "    ${g}✓${r} allows a burst up to the limit ${d}(4 ms)${r}\n"
+printf "    ${g}✓${r} answers 429 with Retry-After once empty ${d}(2 ms)${r}\n"
+printf "    ${g}✓${r} refills at the configured rate ${d}(51 ms)${r}\n"
+printf "  ${d}Tests:${r} ${g}3 passed${r}, 3 total\n\n"
+printf "${y}✻ Running the full suite…${r} ${d}(esc to interrupt)${r}\n"
+exec sleep 3600

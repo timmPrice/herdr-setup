@@ -11,10 +11,10 @@ const S = __SCENARIO__;
 const AGENT = { address: "t0", pane: "p0", space: "s1", space_name: "fake", tab: "tb1", tab_index: 1, tab_name: "1",
   status: "idle", app: "claude-code", program: { key: "claude", name: "claude", icon: "icons/claude.svg", tint: false, tile: "#d97757", color: "#ffffff", shell: false, agent: true },
   title: "", seq: 0, pinned: false, focused: false };
-const PANE = { pane: "p0", terminal: "t0", tab: "tb1", title: "", cwd: "/home/op", branch: null, status: null, app: null,
+const PANE = { pane: "p0", terminal: "t0", tab: "tb1", title: "", cwd: "/work", branch: null, status: null, app: null,
   program: { key: "shell", name: "zsh", shell: true, agent: false }, focused: false, zoomed: false, movable: true };
 const TAB = { id: "tb1", index: 1, name: "1", named: false, active: false, status: null, panes: 1, zoomed: false, settled: false, settled_at: null, changed_at: null, working_since: null };
-const SPACE = { id: "s1", index: 1, name: "fake", named: true, folder: "/home/op", machine: null, branch: null, active: false, status: null, tabs: [] };
+const SPACE = { id: "s1", index: 1, name: "fake", named: true, folder: "/work", machine: null, branch: null, active: false, status: null, tabs: [] };
 const fill = (d, x, i) => ({ ...d, seq: i, ...x });
 const A = S.agents && S.agents.map((a, i) => fill(AGENT, a, i));
 const P = S.panes && S.panes.map((p, i) => fill(PANE, p, i));
@@ -28,6 +28,24 @@ export const window = () => ("window" in S ? S.window : H.window());
 export const props = () => ({ ...(H.props() ?? {}), ...(S.props ?? {}) });
 export const shared = (k) => (S.shared && k in S.shared ? S.shared[k] : H.shared(k));
 export const setAgentOrder = () => {};
+// S.proc = {cpu: 0..1, ncpu, mem: [usedGiB, totalGiB], load: [1,5,15], up: secs, net: [rxBytesPerS, txBytesPerS]}:
+// /proc texts made up from the clock, so CPU and NET read steady values (no host figures in screenshots).
+const t0 = Date.now();
+function procText(path) {
+  const q = S.proc, t = (Date.now() - t0) / 1000 + 1000, n = q.ncpu ?? 8;
+  const total = Math.round(t * 100 * n), busy = Math.round(total * (q.cpu ?? 0.2));
+  const kb = (g) => Math.round(g * 1024 * 1024);
+  const [rx, tx] = q.net ?? [0, 0];
+  switch (path) {
+    case "/proc/stat": return [`cpu  ${busy} 0 0 ${total - busy} 0 0 0 0`, ...Array.from({ length: n }, (_, i) => `cpu${i} 0 0 0 0 0 0 0 0`)].join("\n") + "\n";
+    case "/proc/meminfo": { const [u, tot] = q.mem ?? [8, 32]; return `MemTotal: ${kb(tot)} kB\nMemFree: 0 kB\nMemAvailable: ${kb(tot - u)} kB\n`; }
+    case "/proc/net/dev": return `Inter-|\n face |\n  eth0: ${Math.round(rx * t)} 0 0 0 0 0 0 0 ${Math.round(tx * t)} 0 0 0 0 0 0 0\n`;
+    case "/proc/loadavg": return `${(q.load ?? [0.5, 0.5, 0.5]).map((x) => x.toFixed(2)).join(" ")} 1/300 1\n`;
+    case "/proc/uptime": return `${(q.up ?? 3600) + t - 1000} 0\n`;
+  }
+  return null;
+}
+export const readTextFile = (p) => (S.proc && procText(p) != null ? Promise.resolve(procText(p)) : H.readTextFile(p));
 """
 
 with open(os.path.join(root, "fake-herdr.js"), "w") as f:

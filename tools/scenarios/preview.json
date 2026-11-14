@@ -1,0 +1,33 @@
+{
+  "agents": [
+    { "address": "t2k", "pane": "p1", "status": "blocked", "app": "codex", "program": { "key": "codex", "name": "codex", "agent": true }, "title": "rotate session keys in staging", "space": "s2", "space_name": "payments", "tab": "tb21" },
+    { "address": "t4g", "pane": "p3", "status": "working", "title": "add rate limiting to /v2/orders", "space": "s1", "space_name": "api-gateway", "tab": "tb11", "focused": true },
+    { "address": "t8x", "pane": "p4", "status": "working", "app": "opencode", "program": { "key": "opencode", "name": "opencode", "agent": true }, "title": "bump deps, fix breakage", "space": "s3", "space_name": "web-portal", "tab": "tb31" },
+    { "address": "t7p", "pane": "p2", "status": "done", "title": "prompt cleanup", "space": "s4", "space_name": "dotfiles", "tab": "tb41" },
+    { "address": "t3m", "pane": "p5", "status": "idle", "title": "drain old node pool", "space": "s5", "space_name": "infra", "tab": "tb51" }
+  ],
+  "terminals": [
+    { "address": "t4g", "state": "live", "status": "working" },
+    { "address": "t5r", "parent": "t4g", "state": "live", "status": "working", "name": "run-tests" },
+    { "address": "t5s", "parent": "t4g", "state": "live", "status": "done", "name": "lint" },
+    { "address": "t2k", "state": "live", "status": "blocked" },
+    { "address": "t8x", "state": "live", "status": "working" },
+    { "address": "t7p", "state": "live", "status": "done" },
+    { "address": "t3m", "state": "live", "status": "idle" },
+    { "address": "t9a", "state": "live", "status": null }
+  ],
+  "panes": [
+    { "pane": "p3", "terminal": "t4g", "tab": "tb11", "title": "add rate limiting", "cwd": "/work/api-gateway", "branch": "feat/rate-limit", "status": "working", "focused": true, "program": { "key": "claude", "name": "claude", "agent": true } }
+  ],
+  "focused": { "space": "s1", "tab": "tb11", "pane": "p3", "terminal": "t4g", "shown": null, "agent": "t4g", "cwd": "/work/api-gateway" },
+  "spaces": [
+    { "id": "s1", "name": "api-gateway", "folder": "/work/api-gateway", "active": true, "status": "working", "branch": "feat/rate-limit", "tabs": [ { "id": "tb11", "name": "BUILD", "named": true, "active": true, "status": "working" }, { "id": "tb12", "name": "REVIEW", "named": true }, { "id": "tb13", "name": "OPS", "named": true } ] },
+    { "id": "s2", "name": "payments", "folder": "/work/payments", "status": "blocked", "branch": "main", "tabs": [ { "id": "tb21", "status": "blocked" } ] },
+    { "id": "s3", "name": "web-portal", "folder": "/work/web-portal", "status": "working", "branch": "deps/2026-11", "tabs": [ { "id": "tb31", "status": "working" } ] },
+    { "id": "s4", "name": "dotfiles", "folder": "/work/dotfiles", "status": "done", "branch": "main", "tabs": [ { "id": "tb41", "status": "done" } ] },
+    { "id": "s5", "name": "infra", "folder": "/work/infra", "status": "idle", "branch": "main", "tabs": [ { "id": "tb51", "status": "idle" } ] }
+  ],
+  "props": { "pane": "p3" },
+  "shared": { "ph.intensity": "full" },
+  "proc": { "cpu": 0.31, "ncpu": 16, "mem": [11.6, 32], "load": [2.14, 1.87, 1.52], "up": 300000, "net": [184320, 40960] }
+}

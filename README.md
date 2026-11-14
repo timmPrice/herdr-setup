@@ -77,6 +77,11 @@ python3 -I -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); [d.pop(k,No
 - `tools/fake.sh <mod> tools/scenarios/demo.json [--install] [--keep]` renders a mod with fake agents and spaces
   (the temp copy is removed on exit unless `--keep`). `tools/fake.sh --clean` removes the installed fakes and their
   `data/ph-*-fake`; switch back to phosphor first if phosphor-fake is shown.
+- `preview.png` is made from fake data only: `tools/fake.sh <m> tools/scenarios/preview.json --install` for ph-title,
+  ph-tabs, ph-side, ph-telemetry, ph-pane and ph-status (the scenario also fakes the /proc figures); a throwaway space
+  `herdr-app do space.new '{"name":"demo","folder":"/tmp","argv":["sh","<repo>/tools/preview-term.sh"]}'` for the
+  terminal text; `layout.switch` to phosphor-fake, `herdr-app shot`; then switch back, close the space and
+  `tools/fake.sh --clean`.
 - `python3 -I tools/make-boot-art.py` regenerates the scanline background and the boot wordmark glow.
 - Project rules: no sound; idle is still; minute-resolution clocks only, no per-second redraws; motion only on
   RUN/WAIT, and none in calm; amber means "you are here" and nothing else.
