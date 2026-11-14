@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # PHOSPHOR's one intensity switch: ./intensity.sh calm | full   (no argument: print the current one)
 #
-# Sets props.intensity on every ph-* mod node in the INSTALLED layout (~/.config/herdr-app/layouts/phosphor.json).
+# Sets props.intensity on every ph-* mod node in the INSTALLED layout (~/.config/herdr-app/layouts/phosphor.json),
+# and swaps the scanline look: full = root background image + terminal_opacity 0.7 + transparent `main` pane
+# frame (#12110e00); calm = root "canvas" + terminal_opacity 1 + `main` pane.background "background".
 # Herdr reloads the layout live; blocks whose props changed start over. ph-kit (an invisible block in the
 # layout) mirrors its props.intensity into shared("ph.intensity") when it starts, for mods without props
 # (ph-toast, ph-boot). There is no app command to set shared state, so that mirror is the only writer.
@@ -42,6 +44,21 @@ if not found:
 if not want:
     print(" ".join(sorted({i for _, i in found})))
     sys.exit(0)
+# Scanlines: full shows the texture through slightly see-through terminals and a transparent pane
+# frame; calm is solid (no rows, opaque terminals, the frame back on the terminal colour).
+calm = want == "calm"
+tree["background"] = "canvas" if calm else {"image": "backgrounds/phosphor-scanlines.png", "fit": "cover"}
+tree["terminal_opacity"] = 1 if calm else 0.7
+def pane_bg(n):
+    if isinstance(n, dict):
+        if n.get("id") == "main" and isinstance(n.get("content"), dict) and isinstance(n["content"].get("pane"), dict):
+            n["content"]["pane"]["background"] = "background" if calm else "#12110e00"
+        for v in n.values():
+            pane_bg(v)
+    elif isinstance(n, list):
+        for v in n:
+            pane_bg(v)
+pane_bg(tree)
 d = os.path.dirname(os.path.abspath(path))
 fd, tmp = tempfile.mkstemp(dir=d, prefix=".phosphor.", suffix=".tmp")
 try:

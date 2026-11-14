@@ -9,7 +9,11 @@
     12,
     6
   ],
-  "background": "canvas",
+  "background": {
+    "image": "backgrounds/phosphor-scanlines.png",
+    "fit": "cover"
+  },
+  "terminal_opacity": 0.7,
   "font": "JetBrains Mono",
   "ui_font": "Share Tech Mono",
   "terminal_padding": [
@@ -71,7 +75,7 @@
               "id": "telemetry",
               "type": "block",
               "size": {
-                "px": 240
+                "px": 440
               },
               "min": 60,
               "content": {
@@ -116,7 +120,7 @@
                     "pane": {
                       "gap": 6,
                       "radius": 0,
-                      "background": "background",
+                      "background": "#12110e00",
                       "lone": true,
                       "border": {
                         "width": 1,
