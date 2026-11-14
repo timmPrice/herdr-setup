@@ -13,15 +13,14 @@ import { plate, outline, hazard } from "./lib/plate.js";
 import { Since, tabSeed, oldestBlocked } from "./lib/since.js";
 import { summary, alertText, clockText, respondKey, uplink } from "./text.js";
 
+let bootOpened = false; // sessionStorage is per mod copy (tested live); ph-boot owns the real per-process guard
+
 const H = 24;
 
 export default class PhTitle extends View {
   init(_props, cx) {
-    // sessionStorage lives for this run of the app only: boot shows once per run, not per layout switch.
-    let shown = null;
-    try { shown = sessionStorage.getItem("ph.boot"); } catch {}
-    if (!shown && !isCalm()) {
-      try { sessionStorage.setItem("ph.boot", String(Date.now())); } catch {}
+    if (!bootOpened && !isCalm()) {
+      bootOpened = true;
       cx.timer.after(0, () => openOverlay({ mod: "ph-boot", kind: "window", frame: "none", width: 1, height: 1, at: { x: 0, y: 0 } }));
     }
     // Same tracker as ph-kit.respond, so the strip names the agent the click/key will focus.
