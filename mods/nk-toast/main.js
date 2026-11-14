@@ -10,14 +10,18 @@
 //   full: the seal stamps in (big + transparent -> slams to size in ~180 ms) and the card
 //         fades out just before it closes.
 //   calm: no motion at all; it appears, then closes.
-// Click runs the action (like the shipped toast) and closes. It always closes itself at `timeout`.
+// Click runs the action (like the shipped toast) and closes. It closes itself at `timeout`
+// (default 6 s) while still half visible, so Herdr's frame never shows empty; `timeout: null`
+// keeps it until clicked. Herdr's "<m> needs login; run hc machine login <m>" body becomes a
+// command row with a Copy button, as in the shipped toast.
 
 import { View, div, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { props, closeOverlay, run, shared, settings } from "herdr";
+import { kindOf, loginMachine } from "./kind.js";
 
 const P = {
-  bg: "#1d2021", hover: "#282828", fg: "#ebdbb2", muted: "#a89984",
+  bg: "#1d2021", hover: "#282828", raised: "#3c3836", fg: "#ebdbb2", muted: "#a89984",
   pink: "#d3869b", aqua: "#8ec07c", orange: "#fe8019", red: "#fb4934",
 };
 const KIND = {
@@ -30,18 +34,9 @@ const SEAL_MAX_H = 58, SEAL_MIN_H = 30, SEAL_RATIO = 0.72; // px; art is 72x100
 const SEAL_PAD = 9;             // px kept free above and below the seal
 const STAMP_FROM = 1.3;         // the seal starts this much bigger
 const SLAM_MS = 180;
-const FADE_MS = 400;
-
-const DONE_RE = /\b(finished|done|complete(d)?|succeeded|ready)\b/i;
-const WARN_RE = /\b(needs?|blocked|waiting|failed|error|denied|stuck|attention)\b/i;
-
-function kindOf(p) {
-  const text = `${p.title ?? ""} ${p.body ?? ""}`;
-  if (p.level === "error" || p.level === "warning") return "warn";
-  if (p.level === "success" || DONE_RE.test(p.title ?? "")) return "done";
-  if (WARN_RE.test(text)) return "warn";
-  return "info";
-}
+// The card fades over FADE_MS but the overlay closes halfway through: Herdr's own frame
+// (border, shadow) can't fade, so it goes while the card is still half there.
+const FADE_MS = 300;
 
 function intensity() {
   const v = props()?.intensity ?? shared("nk.intensity");
@@ -51,15 +46,18 @@ function intensity() {
 export default class NkToast extends View {
   init(_props, cx) {
     const p = props() ?? {};
+    // null = keep until clicked (gpui-kit's toast meaning); a positive number = ms; else default
+    const sticky = p.timeout === null;
     const ms = typeof p.timeout === "number" && p.timeout > 0 ? p.timeout : DEFAULT_TIMEOUT;
+    const closeAt = Math.max(SLAM_MS + 100 + FADE_MS / 2, ms);
     this.calm = intensity() === "calm"; // fixed for this toast's life
     // stage 0: seal big + transparent; 1: stamped; 2: fading out
     this.stage = this.calm ? 1 : 0;
     if (!this.calm) {
       cx.timer.after(16, (cx) => { this.stage = 1; cx.notify(); });
-      cx.timer.after(Math.max(SLAM_MS + 100, ms - FADE_MS), (cx) => { this.stage = 2; cx.notify(); });
+      if (!sticky) cx.timer.after(closeAt - FADE_MS / 2, (cx) => { this.stage = 2; cx.notify(); });
     }
-    if (p.overlay) cx.timer.after(ms, () => closeOverlay(p.overlay));
+    if (p.overlay && !sticky) cx.timer.after(closeAt, () => closeOverlay(p.overlay));
   }
 
   seal(kind) {
@@ -81,11 +79,24 @@ export default class NkToast extends View {
     return div().id("nk-toast-seal-slot").relative().flex_none().w(SEAL_W).h(SEAL_H).child(el.id("nk-toast-seal"));
   }
 
+  // the command and a Copy button; copying doesn't dismiss the toast
+  loginRow(command) {
+    return h_flex().gap(8).items_center().min_w(0)
+      .child(div().flex_1().min_w(0).truncate().tooltip(command)
+        .text_size(12).text_color(P.muted).child(command))
+      .child(div().id("nk-toast-login-copy").flex_none().px(6).py(3).rounded(4).bg(P.raised)
+        .text_size(12).text_color(P.fg).cursor_pointer().hover((s) => s.bg("#504945"))
+        .on_click((_e, cx) => { cx.stop_propagation(); cx.write_to_clipboard(command); this.copied = true; cx.notify(); })
+        .child(this.copied ? "Copied" : "Copy"));
+  }
+
   render(cx) {
     const p = props() ?? {};
     const kind = kindOf(p);
     const tint = KIND[kind].tint;
     const fading = this.stage === 2;
+    const machine = loginMachine(p.body);
+    const command = machine ? `hc machine login ${machine}` : null;
     let card = h_flex()
       .id("nk-toast")
       .size_full()
@@ -116,11 +127,12 @@ export default class NkToast extends View {
           .child(
             h_flex().gap(6).items_center().min_w(0)
               .when(Boolean(p.icon), (el) => el.child(image(p.icon).w(14).h(14).flex_none()))
-              .child(div().flex_1().min_w(0).truncate().font_semibold().text_size(13).text_color(P.fg).child(p.title ?? "")),
+              .child(div().flex_1().min_w(0).truncate().font_semibold().text_size(13).text_color(P.fg).child(machine ? `${machine} needs a login: run` : p.title ?? "")),
           )
-          .when(Boolean(p.body), (el) => el.child(div().truncate().text_size(12).text_color(P.muted).child(p.body ?? ""))),
+          .when(!machine && Boolean(p.body), (el) => el.child(div().truncate().text_size(12).text_color(P.muted).child(p.body ?? "")))
+          .when(Boolean(machine), (el) => el.child(this.loginRow(command))),
       );
-    if (!this.calm) card = card.transition("opacity", { duration: FADE_MS, easing: "ease-in" });
+    if (!this.calm) card = card.transition("opacity", { duration: FADE_MS, easing: "linear" });
     return card;
   }
 }
