@@ -2,18 +2,22 @@
 //   03 // EVENTS 記録     status changes observed from agents() (only when the block is tall enough)
 //   03|04 // TELEMETRY 計測  per-state counters, 60-min working histogram, host CPU/MEM/LOAD/NET/uptime from /proc
 // Nothing animates: values change in place. Calm and full look the same (there is no motion to drop).
-// /proc is read on a 3 s timer, never in render; the read is skipped while the block is hidden.
+// /proc is read on a 5 s timer, never in render; the read is skipped while the block is hidden.
+// A tick only notifies (= redraws the whole window) when something it shows actually changed.
 import { View, div, PathBuilder } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
 import { agents, spaces, terminals, layout, settings, readTextFile, exec } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, STATES, KANJI, alpha } from "./lib/palette.js";
 import { plate, outline } from "./lib/plate.js";
-import { Hist, Events, Host, clock, fmtBytes, fmtMem, fmtUptime, splitDump } from "./model.js";
+import { Hist, Events, Host, clock, hostFields, splitDump } from "./model.js";
 
-const TICK = 3000;
+const TICK = 5000;
 const PROC = { stat: "/proc/stat", meminfo: "/proc/meminfo", netdev: "/proc/net/dev", loadavg: "/proc/loadavg", uptime: "/proc/uptime" };
 const PAD = 10;
-const TELE_H = 226;     // telemetry section height; events get whatever is above it
+// Telemetry section height, summed from the fixed heights below (header 8+22, counters 8+48,
+// histogram 8+14+4+34 at its 6-row max, host 8+3*18+2, footer 5+14 = 229) plus slack.
+// Fits a 240 px block; events get whatever is above it.
+const TELE_H = 234;
 const EV_ROW = 18;
 const EV_MIN = 22 + 8 + 3 * EV_ROW; // show EVENTS only if at least 3 rows fit
 
@@ -38,6 +42,7 @@ export default class PhTelemetry extends View {
     this.snap = null;
     this.useExec = false;
     this.busy = false;
+    this.drawnKey = null; // viewKey() of the last render
     this.refresh(cx);
     cx.timer.every(TICK, (cx) => this.refresh(cx));
   }
@@ -46,18 +51,39 @@ export default class PhTelemetry extends View {
     try { return !hiddenIn(layout(), ["sidebar", "telemetry"]); } catch { return true; }
   }
 
+  /** Updates the model from agents(): histogram sample + events diff (also runs while hidden). */
+  observe(list, now) {
+    const working = list.filter((a) => a.status === "working").length;
+    if (this.hist.sample(working, now)) store("hist", this.hist.dump());
+    if (this.events.observe(list, now)) store("events", this.events.dump());
+  }
+
+  /** Everything visible that a tick can change, as a string; equal keys → identical frame. */
+  viewKey(list, now) {
+    const counts = ["working", "blocked", "done", "idle"].map((k) => list.filter((a) => a.status === k).length);
+    const ev = this.events.list[0];
+    return JSON.stringify([hostFields(this.snap), this.hist.series(now), counts, list.length, ev ? [ev.t, ev.addr, ev.to] : null]);
+  }
+
+  /** Notify only if the frame would differ from the one last drawn, and only while shown. */
+  notifyIfChanged(cx) {
+    if (!this.shown()) return;
+    if (this.viewKey(agents(), Date.now()) !== this.drawnKey) cx.notify();
+  }
+
   refresh(cx) {
-    // The histogram needs a sample each minute even when nothing changes status.
-    const working = agents().filter((a) => a.status === "working").length;
-    if (this.hist.sample(working)) store("hist", this.hist.dump());
+    // The histogram needs a sample each minute even when nothing changes status; events are diffed here
+    // too so changes made while the block is hidden (render not running) keep their own tick's time.
+    this.observe(agents(), Date.now());
     if (this.busy || !this.shown()) return;
     this.busy = true;
     cx.spawn(async (cx) => {
       try {
         const texts = await this.readProc();
-        if (texts) { this.snap = this.host.feed(texts); cx.notify(); }
+        if (texts) this.snap = this.host.feed(texts);
       } catch { /* keep the last values */ }
       this.busy = false;
+      this.notifyIfChanged(cx);
     });
   }
 
@@ -77,9 +103,8 @@ export default class PhTelemetry extends View {
   render(cx) {
     const list = agents();
     const now = Date.now();
-    const working = list.filter((a) => a.status === "working").length;
-    if (this.hist.sample(working, now)) store("hist", this.hist.dump());
-    if (this.events.observe(list, now)) store("events", this.events.dump());
+    this.observe(list, now);
+    this.drawnKey = this.viewKey(list, now);
 
     // on_size_change reports zoomed px (504x288 for a 420x240 block at zoom 1.2, seen live); layout px are unzoomed.
     let z = 1;
@@ -147,12 +172,12 @@ export default class PhTelemetry extends View {
     let terms = 0;
     try { terms = terminals().length; } catch { /* optional */ }
     const two = (v) => String(v).padStart(2, "0");
-    return v_flex().h(TELE_H).flex_none()
+    return v_flex().h(TELE_H).flex_none().overflow_hidden()
       .child(this.header(n, "TELEMETRY", KANJI.telemetry))
       .child(this.counters(W, count))
       .child(this.histogram(W, now))
       .child(this.hostView(W))
-      .child(h_flex().px(PAD + 2).pt(5).gap(14).text_size(11).text_color(P.dim)
+      .child(h_flex().h(19).flex_none().px(PAD + 2).pt(5).gap(14).items_center().text_size(11).text_color(P.dim)
         .child(this.stat("TABS", two(tabs)))
         .child(this.stat("SPACES", two(sp.length)))
         .child(this.stat("TERMS", two(terms)))
@@ -205,43 +230,37 @@ export default class PhTelemetry extends View {
       .child(window.paint_path(off.build(), P.panel2).absolute().left(0).top(0).w(gw).h(gh));
     if (anyOn) grid.child(window.paint_path(on.build(), P.aqua).absolute().left(0).top(0).w(gw).h(gh));
     return v_flex().px(PAD).pt(8).gap(4).flex_none()
-      .child(h_flex().text_size(11).text_color(P.dim)
+      .child(h_flex().h(14).items_center().text_size(11).text_color(P.dim)
         .child(div().child("WORKING · LAST 60 MIN"))
         .child(div().flex_1())
         .child(div().child(`peak ${peak}`)))
       .child(grid);
   }
 
-  gauge(frac, cells = 10) {
-    const k = frac == null ? 0 : Math.max(0, Math.min(cells, Math.round(frac * cells)));
+  gauge(k, cells = 10) {
     return h_flex().gap(1).items_center().flex_none().children(Array.from({ length: cells }, (_, i) =>
       div().w(4).h(9).bg(i < k ? P.dim2 : P.panel2)));
   }
 
   hostView(W) {
-    const s = this.snap;
+    const f = hostFields(this.snap);
     const num = (t) => div().font_family(FONT_NUM).text_size(18).line_height("18px").text_color(P.fg).child(t);
     const lab = (t) => div().w(34).flex_none().text_size(11).text_color(P.dim).child(t);
-    const cpu = s?.cpu, mem = s?.mem, load = s?.load, net = s?.net;
-    const pct = cpu == null ? "--" : `${Math.round(cpu * 100)}%`;
-    const memF = mem ? mem.used / mem.total : null;
-    const loadF = load && s?.ncpu ? load[0] / s.ncpu : null;
     const half = Math.floor((W - 2 * PAD) / 2);
     const row = () => h_flex().h(18).items_center();
     return v_flex().px(PAD + 2).pt(8).gap(1).flex_none()
       .child(row()
-        .child(h_flex().w(half).items_center().gap(6).child(lab("CPU")).child(this.gauge(cpu)).child(num(pct)))
-        .child(h_flex().items_center().gap(6).child(lab("MEM")).child(this.gauge(memF)).child(num(fmtMem(mem)))))
+        .child(h_flex().w(half).items_center().gap(6).child(lab("CPU")).child(this.gauge(f.cpuK)).child(num(f.cpu)))
+        .child(h_flex().items_center().gap(6).child(lab("MEM")).child(this.gauge(f.memK)).child(num(f.mem))))
       .child(row()
-        .child(h_flex().w(half).items_center().gap(6).child(lab("LOAD")).child(this.gauge(loadF))
-          .child(num(load ? load[0].toFixed(2) : "--")))
+        .child(h_flex().w(half).items_center().gap(6).child(lab("LOAD")).child(this.gauge(f.loadK)).child(num(f.load)))
         .child(h_flex().items_center().gap(6).child(lab("5/15"))
-          .child(num(load ? `${load[1].toFixed(2)} ${load[2].toFixed(2)}` : "--"))))
+          .child(num(f.load515))))
       .child(row()
         .child(h_flex().w(half).items_center().gap(6).child(lab("NET"))
-          .child(div().font_family(FONT_TERM).text_size(10).text_color(P.dim).child("↓")).child(num(net ? fmtBytes(net.rx) : "--"))
-          .child(div().font_family(FONT_TERM).text_size(10).text_color(P.dim).child("↑")).child(num(net ? fmtBytes(net.tx) : "--")))
-        .child(h_flex().items_center().gap(6).child(lab("UP")).child(num(fmtUptime(s?.up)))));
+          .child(div().font_family(FONT_TERM).text_size(10).text_color(P.dim).child("↓")).child(num(f.rx))
+          .child(div().font_family(FONT_TERM).text_size(10).text_color(P.dim).child("↑")).child(num(f.tx)))
+        .child(h_flex().items_center().gap(6).child(lab("UP")).child(num(f.up))));
   }
 }
 
