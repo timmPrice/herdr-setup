@@ -4,7 +4,7 @@
 // Time-in-state comes from lib/since.js, persisted per copy in localStorage.
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, ScrollHandle } from "gpui-base";
-import { spaces, agents, run, setAgentOrder, exec, window as appWindow } from "herdr";
+import { spaces, agents, run, setAgentOrder, exec, settings, window as appWindow } from "herdr";
 import { P, FONT_UI, FONT_NUM, FONT_JP, FONT_TERM, KANJI, stateOf, alpha } from "./lib/palette.js";
 import { plate, outline, hazard } from "./lib/plate.js";
 import { isCalm, blink, cursor, bars } from "./lib/motion.js";
@@ -28,9 +28,8 @@ export default class PhSide extends View {
     this.since = Since.load(saved);
     this.w = 0;           // logical px (what .w()/.h() take), i.e. measured size / zoom
     this.h = 0;
-    this.rawW = 0;        // on_size_change reports zoomed px; a 100 px probe gives the zoom
+    this.rawW = 0;        // on_size_change reports zoomed px; divide by settings().zoom
     this.rawH = 0;
-    this.scale = 1;
     this.git = {};        // space id → { ahead, behind }
     this.gitAt = 0;
     this.gitBusy = false;
@@ -83,6 +82,7 @@ export default class PhSide extends View {
     const list = ordered(all);
     try { setAgentOrder(list.map((a) => a.address)); } catch {}
     this.lastClock = clockKey(all, this.since, now);
+    this.resize();        // picks up a zoom change
     const calm = isCalm();
     const compact = isCompact(this.w);
     const W = Math.max(40, (this.w || 300) - 2 * PAD);
@@ -97,18 +97,12 @@ export default class PhSide extends View {
     const nodesMax = Math.max(NODE_H * 3, Math.round((this.h || 600) * 0.4));
     const nodesH = Math.min(nodesMax, sp.length * NODE_H + 6);
 
-    return v_flex().id("ph-side").relative().size_full().bg(P.void).font_family(FONT_UI).text_size(13).text_color(P.fg)
+    return v_flex().id("ph-side").size_full().bg(P.void).font_family(FONT_UI).text_size(13).text_color(P.fg)
       .overflow_hidden()
       .on_size_change((size, cx) => {
         this.rawW = size.width; this.rawH = size.height;
         if (this.resize()) cx.notify();
       })
-      // Zoom probe: 100 logical px wide, reported as 100 × zoom.
-      .child(div().id("ph-side-probe").absolute().left(0).top(0).w(100).h(0)
-        .on_size_change((size, cx) => {
-          const k = size.width > 0 ? size.width / 100 : 1;
-          if (Math.abs(k - this.scale) > 0.001) { this.scale = k; if (this.resize()) cx.notify(); }
-        }))
       .child(this.head("01", "NODES", KANJI.nodes, sp.length, W, compact))
       .child(v_flex().id("ph-nodes").flex_none().h(nodesH).overflow_y_scrollbar().px(PAD).pb(6)
         .children(sp.map((s) => this.node(s, pips.get(s.id) ?? [], W, compact))))
@@ -122,7 +116,9 @@ export default class PhSide extends View {
 
   // Logical size from the last measured size and zoom; true when it changed.
   resize() {
-    const w = this.rawW / (this.scale || 1), h = this.rawH / (this.scale || 1);
+    let z = 1;
+    try { z = Number(settings()?.zoom) || 1; } catch {}
+    const w = this.rawW / z, h = this.rawH / z;
     if (Math.round(w) === Math.round(this.w) && Math.round(h) === Math.round(this.h)) return false;
     this.w = w; this.h = h;
     return true;
