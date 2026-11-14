@@ -1,0 +1,17 @@
+{
+  "agents": [
+    { "address": "t2k", "pane": "p1", "status": "idle", "title": "rotate session keys in staging", "space": "s1", "space_name": "api-gateway", "tab": "tb11" },
+    { "address": "t7p", "pane": "p2", "status": "done", "title": "prompt cleanup", "space": "s2", "space_name": "dotfiles", "tab": "tb21" },
+    { "address": "t3m", "pane": "p3", "status": "idle", "title": "drain old node pool", "space": "s3", "space_name": "infra", "tab": "tb31" }
+  ],
+  "terminals": [
+    { "address": "t2k", "state": "live", "status": "idle" },
+    { "address": "t7p", "state": "live", "status": "done" },
+    { "address": "t3m", "state": "live", "status": "idle" }
+  ],
+  "spaces": [
+    { "id": "s1", "name": "api-gateway", "folder": "/work/api-gateway", "active": true, "status": "idle", "tabs": [ { "id": "tb11", "active": true, "status": "idle" } ] },
+    { "id": "s2", "name": "dotfiles", "folder": "/work/dotfiles", "status": "done", "tabs": [ { "id": "tb21", "status": "done" } ] },
+    { "id": "s3", "name": "infra", "folder": "/work/infra", "status": "idle", "tabs": [ { "id": "tb31", "status": "idle" } ] }
+  ]
+}
