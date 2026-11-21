@@ -22,7 +22,7 @@ Left to right, top to bottom (sizes at zoom 1):
   kanji in Kosugi Maru at 16px, the pane's name, its folder (muted, truncated), a
   git-branch icon and branch (muted). A pane without an agent shows a 6px dot instead of the sign.
   Status → kanji and color: working 稼働 aqua #8ec07c, idle 待機 grey #928374, blocked 警告 orange
-  #fe8019, done 完了 pink #d3869b, unknown 不明 grey. The chip is filled with the color at 0x22 alpha
+  #fe8019, done 完了 pink #d3869b, unknown 不明 grey. The chip is filled with the color at 0x1a alpha
   (0x33 focused) with a color border (0xaa focused, 0x55 not); a focused sign gets a faint outer ring.
   Unfocused signs sit at opacity 0.72, idle ones at 0.5.
 - **Sakura tree**: a 280×220 floating block on the pane area, right edge, top (Herdr draws its frame).
@@ -31,6 +31,7 @@ Left to right, top to bottom (sizes at zoom 1):
   keeps its limb and an agent keeps its spot while they exist; newcomers take the lowest free limb or
   spot, overflow spills to any free spot, so blossoms never jump when agents come and go. Empty spots are small dim buds (#9a737e,
   opacity 0.6). The bottom-left corner holds a one-line summary, e.g. `警告2 完了2 稼働3 待機2`.
+  The tree can be collapsed to a mini line (pink 桜 plus the summary, 18px tall) or hidden entirely.
 - **Toasts** (bottom right, Herdr's overlay): a #1d2021 card with a 1px border in the kind's color and
   a tall red hanko seal (#fb4934, cream #fbf1c7 kanji, ink-jittered edge) on the left, title and body
   in the UI font. 完了 (done, pink border), 警告 (warning, orange), 通知 (anything else, aqua).
@@ -58,13 +59,17 @@ Left to right, top to bottom (sizes at zoom 1):
 - **Calm** (`./intensity.sh calm`): no flicker, no petals, no lantern pulse, no stamp or fade. Only
   the slow working pulse moves. `full` is the default.
 - Drag the tree anywhere; it springs to the nearest edge like any floating block.
+- **Show/hide the tree**: `ctrl-shift-y` (bound in `keys.json` section `layout:neo-kyoto` to
+  `nk-sakura.toggle`) hides the tree completely and brings it back. Hovering the tree shows a small `–` in
+  its empty top-left corner: click it to collapse the tree to the mini line; click the mini line to expand.
+  The choice is the shared value `nk.sakura` (`shown` / `mini` / `hidden`), so it survives restarts.
 
 ## Built from
 
 - `layouts/neo-kyoto.json`: a copy of Herdr's shipped `main` (every block kept, including
   `{ "tab": "active" }`), with root `"theme": "neo-kyoto"`, `"toast": "nk-toast"`,
   `"preview": "layouts/neo-kyoto.svg"`. The `main` block's `pane` frame:
-  `focus.color: "working"`, `header: { content: { mod: "nk-pane", props: { intensity } }, height: 30,
+  `focus.color: "working"`, `header: { content: { mod: "nk-pane", props: { intensity } }, height: 32,
   position: "top", reveal: "always" }`, and `floating: [{ id: "sakura", content: { mod: "nk-sakura",
   props: { intensity } }, edge: "right", align: "start" }]`.
 - Shipped mods used: `workspace-chrome`, `spaces`, `agents`, `tabs`, `files`, `changes`,
@@ -77,7 +82,10 @@ Left to right, top to bottom (sizes at zoom 1):
   flicker (a dim copy sits underneath). Ships `fonts/KosugiMaru-nk.ttf` (a subset: the status kanji,
   桜判通知, katakana, ASCII, … and U+3000) plus its Apache LICENSE.txt and NOTICE.txt; the shipped pane mod's button SVGs.
   At start it copies its `intensity` into `setShared("nk.intensity")` (only when it differs).
-- `mods/nk-sakura` (`place: none`): reads `agents()`, `placement()`, `fonts()`; runs `agent.focus`.
+- `mods/nk-sakura` (`place: none`): reads `agents()`, `placement()`, `fonts()`, `shared("nk.sakura")`;
+  runs `agent.focus`. Its `nextCommand()` loop takes `toggle` (hidden ↔ shown), `show`, `mini`, `hidden`
+  and writes `setShared("nk.sakura", …)`; hidden renders an empty `div()`, so the float has no size and
+  Herdr draws no frame.
   `tree-v1.svg` drawn once with `image()`, `blossom.svg`, `petal.svg` and `lantern.svg` tinted with
   `svg()`. The mapping lives in `assign.js` (pure, node-tested), remembered per copy in
   `limbOf` / `slotOf`. Petals: an outer div looping `left` (sway) around an inner one looping `top` (drop). Uses
@@ -88,7 +96,9 @@ Left to right, top to bottom (sizes at zoom 1):
   `… finished` → 完了, login body → 警告, warning words → 警告, done words → 完了, else 通知.
   The seals (`seal-{done,warn,info}-v4.svg`, 72×100) have the kanji baked in as Kosugi Maru outlines
   by `tools/make_seals.py`, so the toast needs no font.
-- `intensity.sh` edits `intensity` in every `nk-*` props of the installed layout; `install.sh` keeps it.
+- `intensity.sh` edits `intensity` in every `nk-*` props of the installed layout (temp file + rename);
+  `install.sh` keeps it, copies theme and mods before the layout, writes the layout once, and adds
+  `"layout:neo-kyoto": { "ctrl-shift-y": "nk-sakura.toggle" }` to `keys.json` only if ctrl-shift-y is free.
 
 ## Watch out
 
@@ -107,6 +117,8 @@ Left to right, top to bottom (sizes at zoom 1):
 - `loop()` is ping-pong: petals float back up rather than fall forever. Keep the tree a fixed size so
   hover never changes the float's layout. More than 30 agents: the extras get no blossom.
 - A blocked pane in full mode keeps the window redrawing on a 60ms clock until answered; calm stops it.
+- `layout.toggle` / `layout.hide` don't reach floating blocks ("no node sakura in the shown layout"), so
+  the tree hides itself. `render()` must return an element: return an empty `div()` to hide, not `null`.
 - The window this was tuned on is a 5120×1440 ultrawide at zoom 1.2: art is sized in px.
 
 ## Done when
@@ -119,5 +131,7 @@ Left to right, top to bottom (sizes at zoom 1):
 - A pane running an agent shows 稼働 while it works and 待機 when idle; a plain shell shows a dot.
 - The tree sits top right of the pane area with one blossom per agent and a kanji summary line.
 - A finished agent's toast shows the 完了 seal and closes by itself.
+- `ctrl-shift-y` (or `herdr-app do nk-sakura.toggle`) makes the tree vanish (`herdr-app status` shows the
+  `sakura` float at 0×0) and brings it back; after a restart it stays the way it was left.
 - `./intensity.sh calm` prints `calm` on `./intensity.sh`, petals and flicker stop, and toasts appear
   without the stamp; `./intensity.sh full` brings them back.
